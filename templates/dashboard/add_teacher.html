@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-5" style="background: linear-gradient(135deg, #f8f9fa, #e9ecef); min-height: 100vh;">
+    <!-- Header Section with Manage Teachers Button -->
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center px-4">
+            <h2 class="fw-bold display-5" style="color: #212529;">
+                <i class="fas fa-chalkboard-teacher me-2"></i>Add Teacher
+            </h2>
+            <a href="{{ url_for('auth.manage_teachers') }}" class="btn"
+               style="background: #3f51b5; color: white; font-weight: 500; padding: 10px 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.2s ease;">
+                <i class="fas fa-user-tie me-2"></i> Manage Teachers
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-10 offset-md-1 col-lg-8 offset-lg-2">
+            <div class="card border-0" style="border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); transition: all 0.3s ease;">
+                <div class="card-header text-white py-3" style="background: linear-gradient(to right, #3f51b5, #5c6bc0);">
+                    <h4 class="mb-0 fw-bold text-center"><i class="fas fa-plus-circle me-2"></i>Create New Profile</h4>
+                </div>
+                <div class="card-body p-4 bg-white">
+                    <form id="teacherForm" action="{{ url_for('auth.add_teacher') }}" method="POST" enctype="multipart/form-data">
+                        <div class="row g-3">
+                            <!-- First Name -->
+                            <div class="col-md-6 mb-3">
+                                <label for="first_name" class="form-label fw-semibold" style="color: #212529; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">First Name</label>
+                                <div class="input-group">
+                                    <span class="input-group-text" style="background: #f8f9fa; border: 1px solid #dee2e6; border-right: none; border-radius: 8px 0 0 8px;">
+                                        <i class="fas fa-user" style="color: #3f51b5;"></i>
+                                    </span>
+                                    <input type="text" class="form-control" id="first_name" name="first_name"
+                                           placeholder="Enter first name" required autocomplete="given-name"
+                                           style="border: 1px solid #dee2e6; border-left: none; border-radius: 0 8px 8px 0; padding: 12px;">
+                                </div>
+                            </div>
+
+                            <!-- Last Name -->
+                            <div class="col-md-6 mb-3">
+                                <label for="last_name" class="form-label fw-semibold" style="color: #212529; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Last Name</label>
+                                <div class="input-group">
+                                    <span class="input-group-text" style="background: #f8f9fa; border: 1px solid #dee2e6; border-right: none; border-radius: 8px 0 0 8px;">
+                                        <i class="fas fa-user" style="color: #3f51b5;"></i>
+                                    </span>
+                                    <input type="text" class="form-control" id="last_name" name="last_name"
+                                           placeholder="Enter last name" required autocomplete="family-name"
+                                           style="border: 1px solid #dee2e6; border-left: none; border-radius: 0 8px 8px 0; padding: 12px;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="mb-3">
+                            <label for="email" class="form-label fw-semibold" style="color: #212529; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Email</label>
+                            <div class="input-group">
+                                <span class="input-group-text" style="background: #f8f9fa; border: 1px solid #dee2e6; border-right: none; border-radius: 8px 0 0 8px;">
+                                    <i class="fas fa-envelope" style="color: #3f51b5;"></i>
+                                </span>
+                                <input type="email" class="form-control" id="email" name="email"
+                                       placeholder="name@example.com" required autocomplete="email"
+                                       pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+                                       style="border: 1px solid #dee2e6; border-left: none; border-radius: 0 8px 8px 0; padding: 12px;">
+                            </div>
+                            <div class="form-text text-muted ms-2">We'll never share your email with anyone else.</div>
+                        </div>
+
+                        <!-- Phone -->
+                        <div class="mb-3">
+                            <label for="phone" class="form-label fw-semibold" style="color: #212529; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Phone Number</label>
+                            <div class="input-group">
+                                <span class="input-group-text" style="background: #f8f9fa; border: 1px solid #dee2e6; border-right: none; border-radius: 8px 0 0 8px;">
+                                    <i class="fas fa-phone" style="color: #3f51b5;"></i>
+                                </span>
+                                <input type="tel" class="form-control" id="phone" name="phone"
+                                       placeholder="10 or 11 digits" pattern="^0?\d{10}$"
+                                       minlength="10" maxlength="11" required
+                                       style="border: 1px solid #dee2e6; border-left: none; border-radius: 0 8px 8px 0; padding: 12px;">
+                            </div>
+                            <div class="form-text text-muted ms-2">Enter 10 digits or 11 digits starting with 0.</div>
+                        </div>
+
+                        <!-- Address -->
+                        <div class="mb-3">
+                            <label for="address" class="form-label fw-semibold" style="color: #212529; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Address</label>
+                            <div class="input-group">
+                                <span class="input-group-text" style="background: #f8f9fa; border: 1px solid #dee2e6; border-right: none; border-radius: 8px 0 0 8px;">
+                                    <i class="fas fa-map-marker-alt" style="color: #3f51b5;"></i>
+                                </span>
+                                <input type="text" class="form-control" id="address" name="address"
+                                       placeholder="Enter complete address" required autocomplete="street-address"
+                                       style="border: 1px solid #dee2e6; border-left: none; border-radius: 0 8px 8px 0; padding: 12px;">
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <!-- Department -->
+                            <div class="col-md-6 mb-3">
+                                <label for="department" class="form-label fw-semibold" style="color: #212529; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Department</label>
+                                <div class="input-group">
+                                    <span class="input-group-text" style="background: #f8f9fa; border: 1px solid #dee2e6; border-right: none; border-radius: 8px 0 0 8px;">
+                                        <i class="fas fa-building" style="color: #3f51b5;"></i>
+                                    </span>
+                                    <select class="form-select" id="department" name="department" required
+                                           style="border: 1px solid #dee2e6; border-left: none; border-radius: 0 8px 8px 0; padding: 12px; height: auto;">
+                                        <option value="">Select Department</option>
+                                        <option value="CSE">Computer Science</option>
+                                        <option value="TT">Textile Technology</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Photo Upload -->
+                            <div class="col-md-6 mb-3">
+                                <label for="photo" class="form-label fw-semibold" style="color: #212529; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Profile Photo</label>
+                                <div class="input-group">
+                                    <span class="input-group-text" style="background: #f8f9fa; border: 1px solid #dee2e6; border-right: none; border-radius: 8px 0 0 8px;">
+                                        <i class="fas fa-camera" style="color: #3f51b5;"></i>
+                                    </span>
+                                    <input type="file" class="form-control" id="photo" name="photo" accept="image/*"
+                                           style="border: 1px solid #dee2e6; border-left: none; border-radius: 0 8px 8px 0; padding: 9px;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn py-3"
+                                    style="background: linear-gradient(to right, #3f51b5, #5c6bc0); color: white; font-weight: 500; border-radius: 8px; box-shadow: 0 4px 6px rgba(63,81,181,0.3); transition: all 0.2s ease; letter-spacing: 0.5px;">
+                                <i class="fas fa-plus-circle me-2"></i> CREATE TEACHER PROFILE
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Modern subtle hover effects */
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 10px rgba(0,0,0,0.15) !important;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1) !important;
+    }
+
+    /* Better focus states */
+    .form-control:focus, .form-select:focus {
+        border-color: #3f51b5 !important;
+        box-shadow: 0 0 0 0.25rem rgba(63, 81, 181, 0.25) !important;
+    }
+
+    /* Smooth animations */
+    @keyframes slideInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+        animation: slideInUp 0.4s ease-out;
+    }
+
+    /* Responsive improvements */
+    @media (max-width: 768px) {
+        .card-body {
+            padding: 1.5rem !important;
+        }
+    }
+</style>
+{% endblock %}

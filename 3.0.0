@@ -1,0 +1,7 @@
+Collecting redis
+  Obtaining dependency information for redis from https://files.pythonhosted.org/packages/3c/5f/fa26b9b2672cbe30e07d9a5bdf39cf16e3b80b42916757c5f92bca88e4ba/redis-5.2.1-py3-none-any.whl.metadata
+  Downloading redis-5.2.1-py3-none-any.whl.metadata (9.1 kB)
+Downloading redis-5.2.1-py3-none-any.whl (261 kB)
+   -------------------------------------- 261.5/261.5 kB 891.0 kB/s eta 0:00:00
+Installing collected packages: redis
+Successfully installed redis-5.2.1

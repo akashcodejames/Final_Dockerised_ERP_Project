@@ -1,0 +1,580 @@
+{% extends "base.html" %}
+
+{% block title %}Take Attendance{% endblock %}
+
+{% block content %}
+<style>
+    /* Modern Professional Attendance Page Styling */
+    :root {
+        --primary: #4361ee;
+        --primary-light: #4895ef;
+        --secondary: #3f37c9;
+        --success: #2ecc71;
+        --success-light: #d4edda;
+        --danger: #e74c3c;
+        --danger-light: #f8d7da;
+        --warning: #f39c12;
+        --info: #3498db;
+        --light: #f8f9fa;
+        --dark: #212529;
+        --gray: #6c757d;
+    }
+
+    .attendance-page {
+        padding: 1.5rem 0;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-subtitle {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .subject-info {
+        background-color: var(--light);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: var(--gray);
+    }
+
+    .info-value {
+        font-weight: 600;
+        color: var(--primary);
+    }
+
+    .card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+
+    .card-header {
+        background: linear-gradient(135deg, var(--primary-light), var(--primary));
+        color: white;
+        font-weight: 600;
+        padding: 1.25rem 1.5rem;
+        border: none;
+    }
+
+    .form-control, .input-group {
+        border-radius: 10px;
+        padding: 0.6rem 1rem;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+        border-color: var(--primary);
+    }
+
+    .date-picker {
+        position: relative;
+    }
+
+    .date-picker .form-control {
+        padding-right: 2.5rem;
+    }
+
+    .calendar-icon {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--primary);
+        cursor: pointer;
+        z-index: 10;
+    }
+
+    .attendance-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-bottom: 2rem;
+    }
+
+    .attendance-table thead th {
+        background-color: #f8f9fa;
+        color: #495057;
+        font-weight: 600;
+        font-size: 0.9rem;
+        padding: 1rem;
+        border-bottom: 2px solid #dee2e6;
+        text-align: left;
+    }
+
+    .student-row {
+        transition: background-color 0.2s ease;
+    }
+
+    .student-row td {
+        padding: 0.875rem 1rem;
+        border-bottom: 1px solid #dee2e6;
+        vertical-align: middle;
+    }
+
+    .roll-number {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        color: #495057;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .student-name {
+        color: #212529;
+        font-weight: 500;
+        font-size: 0.95rem;
+    }
+
+    .attendance-btn-group {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-check {
+        display: none;
+    }
+
+    .attendance-btn {
+        padding: 0.5rem 1rem;
+        border: 1px solid #dee2e6;
+        background-color: #fff;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #495057;
+    }
+
+    .present-btn:hover, .present-btn.active {
+        background-color: #e8f5e9;
+        border-color: #4caf50;
+        color: #2e7d32;
+    }
+
+    .absent-btn:hover, .absent-btn.active {
+        background-color: #fef2f2;
+        border-color: #ef4444;
+        color: #dc2626;
+    }
+
+    .student-row.present {
+        background-color: #f8fdf9;
+    }
+
+    .student-row.absent {
+        background-color: #fff9f9;
+    }
+
+    .submit-btn {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+    }
+
+    .submit-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4);
+    }
+
+    .download-btn {
+        background-color: var(--info);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 0.6rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .download-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 992px) {
+        .attendance-btn {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 1.75rem;
+        }
+
+        .page-subtitle {
+            font-size: 1.1rem;
+        }
+
+        .attendance-table thead th {
+            font-size: 0.75rem;
+            padding: 0.75rem 0.5rem;
+        }
+
+        .attendance-table td {
+            padding: 0.75rem 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .attendance-btn {
+            padding: 0.35rem 0.7rem;
+            font-size: 0.75rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .page-subtitle {
+            font-size: 1rem;
+        }
+
+        .attendance-table {
+            min-width: 500px;
+        }
+
+        .student-card {
+            margin-bottom: 1rem;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .student-card-header {
+            background-color: var(--light);
+            padding: 0.75rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .student-card-body {
+            padding: 0.75rem;
+        }
+    }
+</style>
+
+<div class="container attendance-page">
+    <!-- Page Header -->
+    <div class="page-header text-center">
+        <h1 class="page-title">Take Attendance</h1>
+        <h2 class="page-subtitle">Student Attendance Record</h2>
+    </div>
+
+    <!-- Subject Information -->
+    <div class="subject-info">
+        <div class="row">
+            <div class="col-md-3 col-6 mb-2">
+                <span class="info-label">Subject:</span>
+                <span class="info-value">{{ subject_code }}</span>
+            </div>
+            <div class="col-md-3 col-6 mb-2">
+                <span class="info-label">Batch:</span>
+                <span class="info-value">{{ batch_id }}</span>
+            </div>
+            <div class="col-md-3 col-6 mb-2">
+                <span class="info-label">Year:</span>
+                <span class="info-value">{{ admission_year }}</span>
+            </div>
+            <div class="col-md-3 col-6 mb-2">
+                <span class="info-label">Semester:</span>
+                <span class="info-value">{{ semester }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Download Report Section -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <i class="fas fa-download me-2"></i> Download Report
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="start_date" class="form-label">Start Date</label>
+                        <div class="date-picker">
+                            <input type="date" id="start_date" name="start_date" class="form-control" required>
+                            <i class="fas fa-calendar-alt calendar-icon"></i>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="end_date" class="form-label">End Date</label>
+                        <div class="date-picker">
+                            <input type="date" id="end_date" name="end_date" class="form-control" required>
+                            <i class="fas fa-calendar-alt calendar-icon"></i>
+                        </div>
+                    </div>
+
+                    <button type="button" class="download-btn w-100" onclick="downloadAttendanceReport()">
+                        <i class="fas fa-file-download"></i> Download Report
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attendance Form Section -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-clipboard-check me-2"></i> Attendance Form
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('auth.take_attendance', subject_code=subject_code, batch_id=batch_id, admission_year=admission_year, semester=semester, course_id=course_id, year=year) }}">
+                        <!-- Date Selection -->
+                        <div class="mb-4">
+                            <label for="date" class="form-label">Select Date</label>
+                            <div class="date-picker">
+                                <input type="date" id="date" name="date" class="form-control" required>
+                                <i class="fas fa-calendar-alt calendar-icon" onclick="document.getElementById('date').showPicker()"></i>
+                            </div>
+                        </div>
+
+                        <!-- Desktop Attendance Table -->
+                        <div class="table-responsive">
+                            <table class="attendance-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 20%;">Roll Number</th>
+                                        <th style="width: 40%;">Student Name</th>
+                                        <th style="width: 40%;">Attendance</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for student in students %}
+                                    <tr class="student-row" data-student-id="{{ student.id }}">
+                                        <td>
+                                            <span class="roll-number">{{ student.roll_number }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="student-name">{{ student.first_name }} {{ student.last_name }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="attendance-btn-group">
+                                                <input type="radio" name="attendance_{{ student.id }}" 
+                                                       id="present_{{ student.id }}" value="Present" 
+                                                       class="btn-check" onchange="updateStatus('{{ student.id }}', true)">
+                                                <label for="present_{{ student.id }}" class="attendance-btn present-btn">
+                                                    <i class="fas fa-check"></i> Present
+                                                </label>
+
+                                                <input type="radio" name="attendance_{{ student.id }}" 
+                                                       id="absent_{{ student.id }}" value="Absent" 
+                                                       class="btn-check" checked onchange="updateStatus('{{ student.id }}', false)">
+                                                <label for="absent_{{ student.id }}" class="attendance-btn absent-btn">
+                                                    <i class="fas fa-times"></i> Absent
+                                                </label>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Mobile Attendance Cards -->
+                        <div class="d-md-none">
+                            {% for student in students %}  <!-- Remove any sorting filter here as data is already sorted -->
+                            <div class="student-card" data-student-id="{{ student.id }}">
+                                <div class="student-card-header d-flex justify-content-between align-items-center">
+                                    <span class="roll-number">{{ student.roll_number }}</span>
+                                    <span class="student-name">{{ student.first_name }} {{ student.last_name }}</span>
+                                </div>
+                                <div class="student-card-body">
+                                    <div class="attendance-btn-group">
+                                        <!-- Present Button -->
+                                        <input type="radio" name="attendance_{{ student.id }}" id="present_mobile_{{ student.id }}" value="Present" class="btn-check" onchange="updateStatusMobile('{{ student.id }}', true)">
+                                        <label for="present_mobile_{{ student.id }}" class="attendance-btn present-btn">
+                                            <i class="fas fa-check-circle"></i> Present
+                                        </label>
+
+                                        <!-- Absent Button -->
+                                        <input type="radio" name="attendance_{{ student.id }}" id="absent_mobile_{{ student.id }}" value="Absent" class="btn-check" checked onchange="updateStatusMobile('{{ student.id }}', false)">
+                                        <label for="absent_mobile_{{ student.id }}" class="attendance-btn absent-btn">
+                                            <i class="fas fa-times-circle"></i> Absent
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="text-center mt-4">
+                            <button type="submit" class="submit-btn">
+                                <i class="fas fa-save me-2"></i> Submit Attendance
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Dynamic Effects -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Initialize date pickers
+        document.getElementById("date").addEventListener("change", fetchAttendance);
+
+        // Set default background for absent students
+        document.querySelectorAll(".student-row").forEach(row => {
+            updateStatus(row.getAttribute("data-student-id"), false);
+        });
+
+        document.querySelectorAll(".student-card").forEach(card => {
+            updateStatusMobile(card.getAttribute("data-student-id"), false);
+        });
+
+        // Calendar icon click handlers
+        document.querySelectorAll(".calendar-icon").forEach(icon => {
+            icon.addEventListener("click", function() {
+                const inputId = this.closest(".date-picker").querySelector("input").id;
+                document.getElementById(inputId).showPicker();
+            });
+        });
+    });
+
+    function fetchAttendance() {
+        const date = document.getElementById("date").value;
+        if (!date) return;
+
+        fetch(`{{ url_for('auth.get_attendance') }}?date=${date}&subject_code={{ subject_code }}&batch_id={{ batch_id }}&admission_year={{ admission_year }}&semester={{ semester }}&course_id={{ course_id }}&year={{ year }}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log("Fetched Attendance Data:", data);
+
+                // Reset all to absent first
+                document.querySelectorAll("[data-student-id]").forEach(element => {
+                    const studentId = element.getAttribute("data-student-id");
+                    const isDesktop = element.classList.contains("student-row");
+
+                    if (isDesktop) {
+                        document.getElementById(`absent_${studentId}`).checked = true;
+                        updateStatus(studentId, false);
+                    } else {
+                        document.getElementById(`absent_mobile_${studentId}`).checked = true;
+                        updateStatusMobile(studentId, false);
+                    }
+                });
+
+                // Update with fetched data
+                data.forEach(attendance => {
+                    const studentId = attendance.student_id;
+                    const isPresent = attendance.status === "Present";
+
+                    // Update desktop view
+                    if (document.getElementById(`present_${studentId}`)) {
+                        document.getElementById(`present_${studentId}`).checked = isPresent;
+                        document.getElementById(`absent_${studentId}`).checked = !isPresent;
+                        updateStatus(studentId, isPresent);
+                    }
+
+                    // Update mobile view
+                    if (document.getElementById(`present_mobile_${studentId}`)) {
+                        document.getElementById(`present_mobile_${studentId}`).checked = isPresent;
+                        document.getElementById(`absent_mobile_${studentId}`).checked = !isPresent;
+                        updateStatusMobile(studentId, isPresent);
+                    }
+                });
+            })
+            .catch(error => console.error("Error fetching attendance:", error));
+    }
+
+    function updateStatus(studentId, isPresent) {
+        const row = document.querySelector(`.student-row[data-student-id='${studentId}']`);
+        if (!row) return;
+
+        const presentBtn = document.querySelector(`label[for='present_${studentId}']`);
+        const absentBtn = document.querySelector(`label[for='absent_${studentId}']`);
+
+        if (isPresent) {
+            row.classList.add("present");
+            row.classList.remove("absent");
+            presentBtn.classList.add("active");
+            absentBtn.classList.remove("active");
+        } else {
+            row.classList.add("absent");
+            row.classList.remove("present");
+            absentBtn.classList.add("active");
+            presentBtn.classList.remove("active");
+        }
+    }
+
+    function updateStatusMobile(studentId, isPresent) {
+        const card = document.querySelector(`.student-card[data-student-id='${studentId}']`);
+        if (!card) return;
+
+        const presentBtn = document.querySelector(`label[for='present_mobile_${studentId}']`);
+        const absentBtn = document.querySelector(`label[for='absent_mobile_${studentId}']`);
+
+        if (isPresent) {
+            card.style.backgroundColor = "var(--success-light)";
+            presentBtn.classList.add("active");
+            absentBtn.classList.remove("active");
+        } else {
+            card.style.backgroundColor = "var(--danger-light)";
+            absentBtn.classList.add("active");
+            presentBtn.classList.remove("active");
+        }
+    }
+
+    function downloadAttendanceReport() {
+        let startDate = document.getElementById("start_date").value;
+        let endDate = document.getElementById("end_date").value;
+
+        if (!startDate || !endDate) {
+            alert("Please select both Start Date and End Date.");
+            return;
+        }
+
+        // Construct the download URL with parameters
+        let url = `/teacher/attendance_report?subject_code={{ subject_code }}&batch_id={{ batch_id }}&admission_year={{ admission_year }}&semester={{ semester }}&course_id={{ course_id }}&year={{ year }}&start_date=${startDate}&end_date=${endDate}`;
+
+        // Trigger the download
+        window.location.href = url;
+    }
+</script>
+{% endblock %}

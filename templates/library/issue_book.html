@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Issue Book to {{ student_info.full_name }}</h2>
+    
+    <form method="POST" id="issueBookForm">
+        <div class="mb-3">
+            <label class="form-label">Search and Select Book</label>
+            <div class="input-group">
+                <input type="text" 
+                       id="bookSearch" 
+                       class="form-control" 
+                       placeholder="Search by title, author, or ISBN..."
+                       autocomplete="off">
+                <input type="hidden" id="selectedBookId" name="book_id" required>
+            </div>
+            <div id="searchResults" class="list-group mt-2 d-none">
+                <!-- Search results will be populated here -->
+            </div>
+            <div id="selectedBookInfo" class="mt-2 d-none">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-auto">
+                                <img id="selectedBookCover" src="" alt="Book Cover" 
+                                     class="img-thumbnail" style="max-height: 150px; display: none;">
+                                <i id="defaultBookIcon" class="fas fa-book fa-5x text-muted"></i>
+                            </div>
+                            <div class="col">
+                                <h5 class="card-title" id="selectedBookTitle"></h5>
+                                <p class="card-text" id="selectedBookDetails"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="dueDate" class="form-label">Due Date</label>
+            <input type="date" 
+                   class="form-control" 
+                   id="dueDate" 
+                   name="due_date"
+                   required
+                   min="{{ today }}"
+                   value="{{ default_due_date }}">
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+            Issue Book
+        </button>
+        <a href="{{ url_for('library.student_detail_issue', table_name=table_name, student_id_in_table=student_id) }}" 
+           class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+
+{% block scripts %}
+<script>
+let searchTimeout;
+const searchInput = document.getElementById('bookSearch');
+const searchResults = document.getElementById('searchResults');
+const selectedBookInfo = document.getElementById('selectedBookInfo');
+const selectedBookId = document.getElementById('selectedBookId');
+const submitBtn = document.getElementById('submitBtn');
+
+searchInput.addEventListener('input', function() {
+    const query = this.value.trim();
+    if (query.length < 2) {
+        searchResults.classList.add('d-none');
+        return;
+    }
+    
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        fetch(`/library/api/search-books?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                searchResults.innerHTML = '';
+                data.forEach(book => {
+                    const div = document.createElement('div');
+                    div.className = 'list-group-item list-group-item-action';
+                    div.innerHTML = `
+                        <div class="d-flex align-items-center">
+                            ${book.cover_photo 
+                                ? `<img src="${book.cover_photo}" alt="Cover" class="img-thumbnail me-3" style="max-height: 50px;">` 
+                                : `<i class="fas fa-book fa-2x text-muted me-3"></i>`
+                            }
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>${book.title}</strong><br>
+                                        <small>by ${book.author}</small>
+                                    </div>
+                                    <span class="badge bg-primary">${book.available_copies} available</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    div.addEventListener('click', () => selectBook(book));
+                    searchResults.appendChild(div);
+                });
+                searchResults.classList.remove('d-none');
+            })
+            .catch(error => console.error('Error:', error));
+    }, 300);
+});
+
+function selectBook(book) {
+    selectedBookId.value = book.id;
+    searchInput.value = book.title;
+    searchResults.classList.add('d-none');
+    
+    // Handle cover photo display
+    const coverImg = document.getElementById('selectedBookCover');
+    const defaultIcon = document.getElementById('defaultBookIcon');
+    
+    if (book.cover_photo) {
+        coverImg.src = book.cover_photo;
+        coverImg.style.display = 'block';
+        defaultIcon.style.display = 'none';
+    } else {
+        coverImg.style.display = 'none';
+        defaultIcon.style.display = 'block';
+    }
+    
+    selectedBookInfo.querySelector('#selectedBookTitle').textContent = book.title;
+    selectedBookInfo.querySelector('#selectedBookDetails').innerHTML = `
+        Author: ${book.author}<br>
+        ISBN: ${book.isbn}<br>
+        Available Copies: ${book.available_copies}
+    `;
+    selectedBookInfo.classList.remove('d-none');
+    submitBtn.disabled = false;
+}
+
+// Close search results when clicking outside
+document.addEventListener('click', function(e) {
+    if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+        searchResults.classList.add('d-none');
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

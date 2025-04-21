@@ -1,0 +1,14 @@
+FROM nginx:mainline
+
+# Copy NGINX configuration
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Create necessary directories with proper permissions
+RUN mkdir -p /app/static /app/uploads \
+    && mkdir -p /tmp/nginx/client_temp \
+    && mkdir -p /tmp/nginx/proxy_temp \
+    && chown -R nginx:nginx /tmp/nginx \
+    && chmod 700 /tmp/nginx/client_temp \
+    && chmod 700 /tmp/nginx/proxy_temp
+
+EXPOSE 80

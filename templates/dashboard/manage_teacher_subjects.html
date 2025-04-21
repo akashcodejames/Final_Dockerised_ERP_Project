@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Teacher Subjects{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+  <!-- Header Section -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold text-primary mb-1">Teacher Subject Management</h2>
+      <p class="text-muted">Assign and manage subject allocations for teachers</p>
+    </div>
+    <a href="{{ url_for('auth.hod_dashboard') }}" class="btn btn-outline-primary rounded-pill px-4 d-flex align-items-center">
+      <i class="bi bi-arrow-left me-2"></i> Back to Dashboard
+    </a>
+  </div>
+
+  <div class="row g-4">
+    <!-- Assign Subjects to Teachers Card -->
+    <div class="col-lg-5">
+      <div class="card border-0 shadow-sm rounded-4 h-100">
+        <div class="card-header bg-white py-3 border-0">
+          <div class="d-flex align-items-center">
+            <div class="icon-square bg-primary bg-gradient text-white p-3 rounded-4 me-3">
+              <i class="bi bi-person-plus-fill"></i>
+            </div>
+            <div>
+              <h5 class="card-title mb-0 fw-bold">Assign New Subject</h5>
+              <p class="text-muted small mb-0">Allocate subjects to qualified teachers</p>
+            </div>
+          </div>
+        </div>
+        <div class="card-body p-4">
+          <form method="POST" action="{{ url_for('auth.assign_subject') }}" id="assignmentForm" class="needs-validation" novalidate>
+            <!-- Course Selection -->
+            <div class="mb-3">
+              <label for="course_id" class="form-label fw-semibold">Course</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-book"></i></span>
+                <select class="form-select border-start-0 shadow-none" id="course_id" name="course_id" required onchange="loadYears()">
+                  <option value="">Select Course</option>
+                  {% for course in courses %}
+                  <option value="{{ course.id }}">{{ course.code }} - {{ course.name }}</option>
+                  {% endfor %}
+                </select>
+                <div class="invalid-feedback">Please select a course</div>
+              </div>
+            </div>
+
+            <div class="row g-3">
+              <!-- Admission Year Selection -->
+              <div class="col-md-6">
+                <label for="year" class="form-label fw-semibold">Admission Year</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light border-end-0"><i class="bi bi-calendar-event"></i></span>
+                  <select class="form-select border-start-0 shadow-none" id="year" name="year" required onchange="loadSemesters()">
+                    <option value="">Select Course First</option>
+                  </select>
+                  <div class="invalid-feedback">Please select a year</div>
+                </div>
+              </div>
+
+              <!-- Semester Selection -->
+              <div class="col-md-6">
+                <label for="semester" class="form-label fw-semibold">Semester</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light border-end-0"><i class="bi bi-calendar3"></i></span>
+                  <select class="form-select border-start-0 shadow-none" id="semester" name="semester" required onchange="loadBatches()">
+                    <option value="">Select Year First</option>
+                  </select>
+                  <div class="invalid-feedback">Please select a semester</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row g-3 mt-1">
+              <!-- Batch Selection -->
+              <div class="col-md-6">
+                <label for="batch_id" class="form-label fw-semibold">Batch</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light border-end-0"><i class="bi bi-people"></i></span>
+                  <select class="form-select border-start-0 shadow-none" id="batch_id" name="batch_id" required onchange="loadSubjects()">
+                    <option value="">Select Semester First</option>
+                  </select>
+                  <div class="invalid-feedback">Please select a batch</div>
+                </div>
+              </div>
+
+              <!-- Subject Selection -->
+              <div class="col-md-6">
+                <label for="subject_id" class="form-label fw-semibold">Subject</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light border-end-0"><i class="bi bi-journal-text"></i></span>
+                  <select class="form-select border-start-0 shadow-none" id="subject_id" name="subject_id" required onchange="loadTeachers()">
+                    <option value="">Select Batch First</option>
+                  </select>
+                  <div class="invalid-feedback">Please select a subject</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Teacher Selection -->
+            <div class="mb-4 mt-3">
+              <label for="teacher_id" class="form-label fw-semibold">Assign Teacher</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-person-badge"></i></span>
+                <select class="form-select border-start-0 shadow-none" id="teacher_id" name="teacher_id" required>
+                  <option value="">Select Subject First</option>
+                </select>
+                <div class="invalid-feedback">Please select a teacher</div>
+              </div>
+            </div>
+
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary py-2 rounded-3">
+                <i class="bi bi-plus-circle me-2"></i> Assign Subject
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Current Assignments Card -->
+    <div class="col-lg-7">
+      <div class="card border-0 shadow-sm rounded-4 h-100">
+        <div class="card-header bg-white py-3 border-0">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+              <div class="icon-square bg-success bg-gradient text-white p-3 rounded-4 me-3">
+                <i class="bi bi-list-check"></i>
+              </div>
+              <div>
+                <h5 class="card-title mb-0 fw-bold">Current Assignments</h5>
+                <p class="text-muted small mb-0">Manage existing teacher-subject allocations</p>
+              </div>
+            </div>
+            <span class="badge bg-primary rounded-pill px-3 py-2">{{ subject_assignments|length }} Assignments</span>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="bg-light">
+                <tr>
+                  <th class="px-4 py-3">Course & Subject</th>
+                  <th class="px-3 py-3">Year/Sem</th>
+                  <th class="px-3 py-3">Batch</th>
+                  <th class="px-3 py-3">Teacher</th>
+                  <th class="text-end px-4 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for assignment in subject_assignments %}
+                <tr>
+                  <td class="px-4">
+                    <div>
+                      <div class="fw-semibold">{{ assignment.subject.subject_name }}</div>
+                      <div class="small text-muted">{{ assignment.subject.subject_code }}</div>
+                    </div>
+                  </td>
+                  <td class="px-3">{{ assignment.subject.course.name }}</td>
+                  <td class="px-3">{{ assignment.subject.year }}/{{ assignment.subject.semester }}</td>
+                  <td class="px-3">{{ assignment.subject.batch_id }}</td>
+                  <td class="px-3">
+                    <div class="d-flex align-items-center">
+                      <div class="avatar-circle me-2 bg-gradient-primary text-white">
+                        {{ assignment.teacher.first_name[0] }}{{ assignment.teacher.last_name[0] }}
+                      </div>
+                      <span>{{ assignment.teacher.first_name }} {{ assignment.teacher.last_name }}</span>
+                    </div>
+                  </td>
+                  <td class="text-end px-4">
+                    <form method="POST" action="{{ url_for('auth.remove_subject_assignment') }}" style="display: inline;">
+                      <input type="hidden" name="assignment_id" value="{{ assignment.id }}">
+                      <button type="submit" class="btn btn-outline-danger btn-sm px-3 py-1 rounded-3 delete-btn"
+                              onclick="return confirm('Are you sure you want to remove this assignment?')">
+                        <i class="bi bi-trash-fill me-1"></i> Remove
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+                {% endfor %}
+                {% if not subject_assignments %}
+                <tr>
+                  <td colspan="5" class="text-center py-5">
+                    <div class="text-muted">
+                      <i class="bi bi-inbox-fill fs-1 d-block mb-3 text-light"></i>
+                      <p class="mb-1">No subject assignments found</p>
+                      <small>Use the form to assign subjects to teachers</small>
+                    </div>
+                  </td>
+                </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Custom styles */
+  .bg-gradient-primary {
+    background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+  }
+  
+  .bg-gradient-light {
+    background: linear-gradient(135deg, #f8f9fc 0%, #f1f3f9 100%);
+  }
+  
+  .avatar-circle {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+  }
+  
+  .icon-square {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+  
+  .form-select:focus, .form-control:focus {
+    border-color: #4e73df;
+    box-shadow: 0 0 0 0.15rem rgba(78, 115, 223, 0.25);
+  }
+  
+  .delete-btn {
+    transition: all 0.2s ease;
+  }
+  
+  .delete-btn:hover {
+    background-color: #dc3545;
+    color: white;
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+  }
+  
+  .input-group-text {
+    color: #6c757d;
+  }
+  
+  .table > :not(caption) > * > * {
+    padding: 0.75rem 0;
+  }
+  
+  .table > tbody > tr:hover {
+    background-color: rgba(78, 115, 223, 0.05);
+  }
+  
+  .card {
+    transition: all 0.3s ease;
+  }
+  
+  .card:hover {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  .form-label {
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+  }
+</style>
+
+<script>
+  // Form validation
+  (() => {
+    'use strict'
+    const forms = document.querySelectorAll('.needs-validation')
+    Array.from(forms).forEach(form => {
+      form.addEventListener('submit', event => {
+        if (!form.checkValidity()) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+        form.classList.add('was-validated')
+      }, false)
+    })
+  })()
+
+  function loadYears() {
+    const courseId = document.getElementById('course_id').value;
+    if (!courseId) return;
+
+    fetch(`/get_batches_years?course_id=${courseId}`)
+      .then(response => response.json())
+      .then(data => {
+        const yearSelect = document.getElementById('year');
+        yearSelect.innerHTML = '<option value="">Select Year</option>';
+        data.years.forEach(year => {
+          yearSelect.add(new Option(year, year));
+        });
+      })
+      .catch(error => console.error('Error loading years:', error));
+  }
+
+  function loadSemesters() {
+    const courseId = document.getElementById('course_id').value;
+    const year = document.getElementById('year').value;
+    if (!courseId || !year) return;
+
+    fetch(`/get_semesters?course_id=${courseId}&year=${year}`)
+      .then(response => response.json())
+      .then(data => {
+        const semesterSelect = document.getElementById('semester');
+        semesterSelect.innerHTML = '<option value="">Select Semester</option>';
+        data.semesters.forEach(sem => {
+          semesterSelect.add(new Option(sem, sem));
+        });
+      })
+      .catch(error => console.error('Error loading semesters:', error));
+  }
+
+  function loadBatches() {
+    const courseId = document.getElementById('course_id').value;
+    const year = document.getElementById('year').value;
+    const semester = document.getElementById('semester').value;
+    if (!courseId || !year || !semester) return;
+
+    fetch(`/get_batches?course_id=${courseId}&year=${year}&semester=${semester}`)
+      .then(response => response.json())
+      .then(data => {
+        const batchSelect = document.getElementById('batch_id');
+        batchSelect.innerHTML = '<option value="">Select Batch</option>';
+        data.batches.forEach(batch => {
+          batchSelect.add(new Option(batch, batch));
+        });
+      })
+      .catch(error => console.error('Error loading batches:', error));
+  }
+
+  function loadSubjects() {
+    const courseId = document.getElementById('course_id').value;
+    const year = document.getElementById('year').value;
+    const semester = document.getElementById('semester').value;
+    const batchId = document.getElementById('batch_id').value;
+    if (!courseId || !year || !semester || !batchId) return;
+
+    fetch(`/get_subjects_course?course_id=${courseId}&year=${year}&semester=${semester}&batch_id=${batchId}`)
+      .then(response => response.json())
+      .then(data => {
+        const subjectSelect = document.getElementById('subject_id');
+        subjectSelect.innerHTML = '<option value="">Select Subject</option>';
+        data.subjects.forEach(subject => {
+          subjectSelect.add(new Option(subject.subject_name, subject.id));
+        });
+      })
+      .catch(error => console.error('Error loading subjects:', error));
+  }
+
+  function loadTeachers() {
+    fetch(`/get_teachers`)
+      .then(response => response.json())
+      .then(data => {
+        const teacherSelect = document.getElementById('teacher_id');
+        teacherSelect.innerHTML = '<option value="">Select Teacher</option>';
+        data.teachers.forEach(teacher => {
+          teacherSelect.add(new Option(teacher.name, teacher.id));
+        });
+      })
+      .catch(error => console.error('Error loading teachers:', error));
+  }
+</script>
+{% endblock %} 

@@ -1,0 +1,379 @@
+<!-- edit_timetable.html -->
+{% extends "base.html" %}
+
+{% block title %}Edit Timetable - Timetable Generator{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Timetable</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='timetable_css_js/css/timetable_editor.css') }}" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f5f5f5;
+            padding-top: 0rem;
+            padding-bottom: 2rem;
+        }
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background-color: #3f51b5;
+            color: white;
+            font-weight: bold;
+            border-radius: 10px 10px 0 0 !important;
+        }
+        .btn-primary {
+            background-color: #3f51b5;
+            border-color: #3f51b5;
+        }
+        .btn-primary:hover {
+            background-color: #303f9f;
+            border-color: #303f9f;
+        }
+        .timetable-cell {
+            height: 100px;
+            position: relative;
+            border: 1px solid #dee2e6;
+            cursor: grab;
+            transition: all 0.2s;
+            background-color: white;
+        }
+        .timetable-cell:hover {
+            background-color: #f8f9fa;
+        }
+        .timetable-cell.dragover {
+            background-color: #e9ecef;
+            border: 2px dashed #6c757d;
+        }
+        .timetable-content {
+            font-size: 0.85rem;
+            padding: 8px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .cell-actions {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            display: none;
+        }
+        .timetable-cell:hover .cell-actions {
+            display: block;
+        }
+        .form-select {
+            font-size: 0.85rem;
+            padding: 4px;
+        }
+        .sticky-top-offset {
+            top: 20px;
+        }
+        .subject-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+        .subject-item {
+            padding: 10px;
+            margin-bottom: 5px;
+            background-color: #fff;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+            cursor: grab;
+        }
+        .subject-item:hover {
+            background-color: #f8f9fa;
+        }
+        .remove-btn {
+            font-size: 12px;
+            padding: 0px 5px;
+            position: absolute;
+            top: 3px;
+            right: 3px;
+            display: none;
+        }
+        .timetable-cell:hover .remove-btn {
+            display: block;
+        }
+        .batch-tabs {
+            overflow-x: auto;
+            white-space: nowrap;
+            flex-wrap: nowrap;
+            margin-bottom: 1rem;
+        }
+        .batch-tabs .nav-link {
+            white-space: normal;
+            word-wrap: break-word;
+            min-width: 150px;
+        }
+        .period-header {
+            font-weight: bold;
+            background-color: #e9ecef;
+        }
+        .day-header {
+            font-weight: bold;
+            background-color: #e9ecef;
+        }
+        .action-buttons-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            padding: 0.5rem;
+        }
+        @media (max-width: 767px) {
+            .action-buttons-container {
+                flex-direction: column;
+                padding: 0.5rem;
+            }
+            .action-buttons-container .btn {
+                width: 100%;
+                margin: 0;
+                padding: 0.75rem;
+                font-size: 0.9rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .action-buttons-container .btn i {
+                margin-right: 0.5rem;
+                font-size: 1.1rem;
+            }
+            .action-buttons-container .btn-primary {
+                order: -1;
+                padding: 1rem;
+                font-size: 1rem;
+                font-weight: 500;
+            }
+        }
+        @media (min-width: 768px) {
+            .action-buttons-container {
+                flex-direction: row;
+                padding: 1rem;
+            }
+            .action-buttons-container .btn {
+                padding: 0.6rem 1.5rem;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="page-header text-center">
+        <h1 class="page-title">Edit Timetable</h1>
+        <p class="page-subtitle">Drag and drop subjects to rearrange the timetable</p>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="action-buttons-container">
+                <button id="save-timetable" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Save Changes
+                </button>
+                <a href="{{ url_for('timetable.print_timetable') }}" id="print-timetable-link" class="btn btn-outline-primary" target="_blank">
+                    <i class="bi bi-printer"></i> Advanced Print View
+                </a>
+                <a href="{{ url_for('timetable.render_timetable') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-house"></i> Back to Home
+                </a>
+                <button type="button" class="btn btn-outline-warning" onclick="checkConflicts()">
+                    <i class="bi bi-exclamation-triangle"></i> Check Conflicts
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-9">
+            <ul class="nav nav-tabs batch-tabs" id="batchTabs" role="tablist">
+                {% for batch in batches %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if loop.first %}active{% endif %}" 
+                            id="batch-{{ loop.index }}-tab" 
+                            data-bs-toggle="tab" 
+                            data-bs-target="#batch-{{ loop.index }}" 
+                            type="button" 
+                            role="tab" 
+                            aria-controls="batch-{{ loop.index }}" 
+                            aria-selected="{% if loop.first %}true{% else %}false{% endif %}">
+                        {% set parts = batch.split(",") %}
+                        {% set course_id = parts[0].strip("{}") %}
+                        {% set course_name = course_map[course_id] %}
+                        
+                        <div class="d-flex flex-column align-items-start">
+                            <span class="fw-bold text-primary">{{ course_name }}</span>
+                            <small>Year: {{ parts[1] }} | Sem: {{ parts[2] }} | Batch: {{ parts[3] }}</small>
+                        </div>
+                    </button>
+                </li>
+                {% endfor %}
+            </ul>
+
+            <div class="tab-content" id="batchTabsContent">
+                {% for batch in batches %}
+                <div class="tab-pane fade {% if loop.first %}show active{% endif %}" 
+                     id="batch-{{ loop.index }}" 
+                     role="tabpanel" 
+                     aria-labelledby="batch-{{ loop.index }}-tab"
+                     data-batch-id="{{ batch }}"
+                     data-batch-name="{% set parts = batch.split(',') %}{{ course_map[parts[0].strip('{}')].strip() }} - Year {{ parts[1].strip() }} - Sem {{ parts[2].strip() }} - Batch {{ parts[3].strip() }}">
+                    
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span>
+                                <i class="bi bi-calendar-week me-2"></i>
+                                Timetable for {{ course_map[batch.split(',')[0].strip('{}')].strip() }}
+                            </span>
+                            <span class="badge bg-primary">
+                                <i class="bi bi-people me-1"></i>
+                                Batch {{ batch.split(',')[3].strip() }}
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered timetable-table" data-batch="{{ batch }}">
+                                    <thead>
+                                    <tr>
+                                        <th class="text-center day-header">Day / Period</th>
+                                        {% for i in range(periods_per_day) %}
+                                        <th class="text-center period-header">
+                                            {% if i < 3 %}
+                                            Period {{ i + 1 }}
+                                            {% else %}
+                                            Period {{ i + 1 }}
+                                            {% endif %}
+                                        </th>
+                                        {% endfor %}
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for day in days %}
+                                    <tr>
+                                        <td class="text-center day-header">{{ day }}</td>
+                                        {% for i in range(periods_per_day) %}
+                                        <td class="timetable-cell"
+                                            data-day="{{ day }}"
+                                            data-period="{{ i }}">
+
+                                            {% if timetable[batch][day][i] %}
+                                            <div class="timetable-content"
+                                                 draggable="true"
+                                                 data-subject-id="{{ timetable[batch][day][i].subject_id }}"
+                                                 data-teacher-id="{{ timetable[batch][day][i].teacher_id }}"
+                                                 data-subject-name="{{ timetable[batch][day][i].subject_name }}"
+                                                 data-teacher-name="{{ timetable[batch][day][i].teacher_name }}">
+
+                                                <button class="remove-btn" title="Remove">×</button>
+                                                <strong>{{ timetable[batch][day][i].subject_name }}</strong>
+                                                <small class="text-muted">{{ timetable[batch][day][i].teacher_name }}</small>
+                                            </div>
+                                            {% endif %}
+                                        </td>
+                                        {% endfor %}
+                                    </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card sticky-top sticky-top-offset">
+                <div class="card-header">
+                    <i class="bi bi-journal-text me-2"></i>
+                    Available Subjects
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="batchSelect" class="form-label">
+                            <i class="bi bi-filter-circle me-1"></i>
+                            Select Batch:
+                        </label>
+                        <select class="form-select" id="batchSelect">
+                            {% for batch in batches %}
+                            <option value="{{ batch }}">
+                                {% set parts = batch.split(",") %}
+                                {% set course_id = parts[0].strip("{}") %}
+                                {% set course_name = course_map[course_id] %}
+                                {{ course_name }} - Year {{ parts[1] }} - Sem {{ parts[2] }} - Batch {{ parts[3] }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div id="subjectsList" class="subject-list">
+                        {% for subject_name, subject_data in all_subjects[batches[0]].items() %}
+                        <div class="subject-item">
+                            <div><strong>{{ subject_name }}</strong> <span class="text-muted">({{ subject_data.subject_code }})</span></div>
+                            <div class="mt-1">
+                                <label class="form-label">
+                                    <i class="bi bi-person-badge me-1"></i>
+                                    Select Teacher:
+                                </label>
+                                <select class="form-select teacher-select">
+                                    {% for teacher in subject_data.teachers %}
+                                    <option value="{{ teacher.teacher_id }}">{{ teacher.teacher_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button class="btn btn-sm btn-primary mt-2"
+                                    data-subject-name="{{ subject_name }}"
+                                    data-subject-id="{{ subject_data.subject_id }}"
+                                    data-subject-code="{{ subject_data.subject_code }}">
+                                <i class="bi bi-plus-circle me-1"></i>
+                                Add to Timetable
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Save Timetable Form (hidden) -->
+<form id="timetable-form" action="{{ url_for('timetable.update_timetable') }}" method="POST" style="display: none;">
+    <input type="hidden" id="timetable-data" name="timetable_data" value="">
+</form>
+
+<!-- Hidden teacher data for subjects -->
+<div style="display: none;">
+    {% for batch in batches %}
+        {% for subject_name, subject_data in all_subjects[batch].items() %}
+            <div id="teacher-data-{{ subject_data.subject_id }}">
+                {% for teacher in subject_data.teachers %}
+                    <option value="{{ teacher.teacher_id }}">{{ teacher.teacher_name }}</option>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    {% endfor %}
+</div>
+
+<!-- Store template data in hidden inputs for JavaScript access -->
+<div style="display: none;">
+    <input type="hidden" id="all-subjects-data" value='{{ all_subjects|tojson }}'>
+    <input type="hidden" id="current-batch-data" value='{{ batches[0] }}'>
+    <input type="hidden" id="all-days-data" value='{{ days|tojson }}'>
+    <input type="hidden" id="periods-per-day-data" value='{{ periods_per_day }}'>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='timetable_css_js/js/timetable_editor.js') }}"></script>
+</body>
+</html>
+{% endblock %}

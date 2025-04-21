@@ -1,0 +1,105 @@
+body {
+    background-color: #f8f9fa;
+    color: #212529;
+}
+
+.card {
+    background-color: white;
+    color: black;
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075);
+    min-height: 100%;
+}
+
+.navbar {
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+
+
+
+.login-form {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+/* Initially hide the alert above the viewport */
+.alert {
+    position: relative;
+    top: 0;
+    transform: translateY(-100%);
+    opacity: 0;
+    transition: transform 0.5s ease-out, opacity 0.5s ease-out;
+}
+/* Slide down when the message appears */
+.alert.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+/* Slide up and remove space when disappearing */
+.alert.slide-up {
+    transform: translateY(-100%);
+    opacity: 0;
+    transition: transform 0.5s ease-in, opacity 0.5s ease-in;
+}
+
+.navbar-brand {
+    font-weight: 600;
+}
+
+.card-title {
+    color: #0d6efd;
+    font-weight: 600;
+}
+
+.btn-primary {
+    padding: 0.5rem 2rem;
+}
+
+.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13,110,253,.25);
+}
+/* Smooth fade-out animation for flash messages */
+.fade-out {
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+/* Light Mode (Default) */
+
+
+/* Dark Mode */
+.dark-mode {
+    background-color: #212529;
+    color: #f8f9fa;
+}
+
+.dark-mode .card {
+    background-color: #343a40;
+    color: #ffffff;
+}
+
+.dark-mode .navbar {
+    background-color: #1b1e21 !important;
+}
+
+.dark-mode .alert {
+    background-color: #333;
+    color: #f8f9fa;
+    border-color: #555;
+}
+
+.dark-mode .btn-outline-light {
+    color: #f8f9fa;
+    border-color: #f8f9fa;
+}
+.management-sections {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.management-sections .col-md-6 {
+    width: 100%;
+}

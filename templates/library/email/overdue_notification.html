@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .header {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 3px solid #e9ecef;
+        }
+        .content {
+            padding: 20px;
+        }
+        .book-list {
+            margin: 20px 0;
+        }
+        .book-item {
+            background-color: #f8f9fa;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .book-title {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+        .total-books {
+            background-color: #dc3545;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            display: inline-block;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>Library Books Overdue Notice</h2>
+        <div class="total-books">{{ overdue_books|length }} Overdue {{ 'Book' if overdue_books|length == 1 else 'Books' }}</div>
+    </div>
+    <div class="content">
+        <p>Dear {{ student_name }},</p>
+        <p>This is a friendly reminder from the library regarding multiple books that are currently overdue:</p>
+        
+        <div class="book-list">
+            {% for book in overdue_books %}
+            <div class="book-item">
+                <div class="book-title">{{ book.title }}</div>
+                <div>Due Date: {{ book.due_date }}</div>
+                <div>Days Overdue: {{ book.days_overdue }}</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <p>Please return these books to the library as soon as possible to:</p>
+        <ul>
+            <li>Avoid accumulating additional fines (if applicable)</li>
+            <li>Allow other students to access these resources</li>
+            <li>Maintain good standing with the library</li>
+        </ul>
+
+        <p>If you have already returned any of these books, please disregard that portion of this message.</p>
+
+        <div class="footer">
+            <p>If you believe this message is in error or need to discuss an extension, please visit the library circulation desk or contact us.</p>
+            <p>Thank you for your prompt attention to this matter.</p>
+            <p>Best regards,<br>Library Staff</p>
+        </div>
+    </div>
+</body>
+</html>

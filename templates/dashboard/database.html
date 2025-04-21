@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Database Management{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Database Management</h2>
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="list-group">
+                {% for model in models %}
+                <a href="{{ url_for('auth.view_table', table_name=model.table) }}" 
+                   class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">{{ model.name }}</h5>
+                        <small>
+                            Table: {{ model.table }}
+                            {% if model.count %}
+                            ({{ model.count }} rows)
+                            {% endif %}
+                        </small>
+                    </div>
+                    <p class="mb-1">
+                        <small>Columns: {{ model.columns|join(', ') }}</small>
+                    </p>
+                    
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

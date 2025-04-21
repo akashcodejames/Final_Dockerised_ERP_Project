@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Teachers{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="text-primary fw-bold">Manage Teachers</h2>
+        <a href="{{ url_for('auth.admin_dashboard') }}" class="btn btn-secondary shadow">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="text-end mb-3">
+        <a href="{{ url_for('auth.render_teacher') }}" class="btn btn-primary shadow">
+            <i class="fas fa-user-plus"></i> Add Teacher
+        </a>
+    </div>
+
+    <!-- Table with Better Styling -->
+    <div class="card shadow-lg border-0 rounded-3">
+        <div class="card-body">
+            <table class="table table-hover table-bordered align-middle">
+                <thead class="table-dark text-center">
+                    <tr>
+                        <th>ID</th>
+                        <th>Email</th>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Phone</th>
+                        <th>Address</th>
+                        <th>Department</th>
+                        <th>Photo</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for teacher in teachers %}
+                    <tr>
+                        <form method="POST" action="{{ url_for('auth.update_teacher', teacher_id=teacher.id) }}" enctype="multipart/form-data">
+                            <td class="text-center">{{ teacher.id }}</td>
+                            <td><input type="email" class="form-control" name="email" value="{{ teacher.email }}" required></td>
+                            <td><input type="text" class="form-control" name="first_name" value="{{ teacher.first_name }}" required></td>
+                            <td><input type="text" class="form-control" name="last_name" value="{{ teacher.last_name }}" required></td>
+                            <td><input type="text" class="form-control" name="phone" value="{{ teacher.phone }}"></td>
+                            <td><input type="text" class="form-control" name="address" value="{{ teacher.address }}"></td>
+                            <td><input type="text" class="form-control" name="department" value="{{ teacher.department }}"></td>
+                            <td class="text-center">
+                                {% if teacher.photo_path %}
+                                    <img src="{{ url_for('protected_image', folder='teacher_photos', filename=teacher.photo_path) }}"
+                                         alt="Teacher Photo" class="profile-img"
+                                         data-bs-toggle="modal" data-bs-target="#imageModal"
+                                         onclick="showImage('{{ url_for('protected_image', folder='teacher_photos', filename=teacher.photo_path) }}')">
+                                {% else %}
+                                    <span class="text-muted">No Photo</span>
+                                {% endif %}
+                                <input type="file" class="form-control mt-2" name="photo">
+                            </td>
+                            <td class="text-center">
+                                <button type="submit" class="btn btn-success btn-sm shadow"><i class="fas fa-save"></i> Save</button>
+                                <button type="button" class="btn btn-danger btn-sm shadow" onclick="confirmDelete({{ teacher.id }})">
+                                    <i class="fas fa-trash-alt"></i> Delete
+                                </button>
+                            </td>
+                        </form>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Form (Hidden) -->
+<form id="deleteForm" method="POST">
+    <input type="hidden" id="deleteTeacherId" name="teacher_id">
+</form>
+
+<!-- Bootstrap Modal for Viewing Large Image -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel">Teacher Photo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" class="img-fluid rounded shadow-lg" alt="Teacher Photo">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CSS for Improved Styling -->
+<style>
+    .profile-img {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: transform 0.2s ease-in-out;
+    }
+
+    .profile-img:hover {
+        transform: scale(1.1);
+    }
+
+    .table th, .table td {
+        vertical-align: middle;
+        text-align: center;
+    }
+
+    .btn:hover {
+        transform: scale(1.05);
+        transition: 0.2s ease-in-out;
+    }
+</style>
+
+<!-- JavaScript to Handle Image Click and Delete Confirmation -->
+<script>
+function showImage(imageUrl) {
+    document.getElementById('modalImage').src = imageUrl;
+}
+
+function confirmDelete(teacherId) {
+    if (confirm('Are you sure you want to delete this Teacher? This action cannot be undone.')) {
+        var form = document.getElementById('deleteForm');
+        form.action = "/admin/delete_teacher/" + teacherId;
+        form.submit();
+    }
+}
+</script>
+
+{% endblock %}

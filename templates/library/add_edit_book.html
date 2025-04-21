@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}{{ form_action }} Book{% endblock %}
+
+{% block content %}
+    <h1>{{ form_action }} Book</h1>
+    <hr>
+
+    <form method="POST" action="{{ url_for('library.' + ('edit_book' if form_action == 'Edit' else 'add_book'), book_id=book.id if book else None) }}" enctype="multipart/form-data">
+        <div class="row g-3">
+            <div class="col-md-6 mb-3">
+                <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
+                <input type="text" class="form-control {% if errors and 'title' in errors %}is-invalid{% endif %}" id="title" name="title" value="{{ request.form.title if request.form else (book.title if book else '') }}" required>
+                {% if errors and 'title' in errors %}
+                    <div class="invalid-feedback">{{ errors['title'] }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="author" class="form-label">Author <span class="text-danger">*</span></label>
+                <input type="text" class="form-control {% if errors and 'author' in errors %}is-invalid{% endif %}" id="author" name="author" value="{{ request.form.author if request.form else (book.author if book else '') }}" required>
+                {% if errors and 'author' in errors %}
+                    <div class="invalid-feedback">{{ errors['author'] }}</div>
+                {% endif %}
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <label for="isbn" class="form-label">ISBN</label>
+                <input type="text" class="form-control {% if errors and 'isbn' in errors %}is-invalid{% endif %}" id="isbn" name="isbn" value="{{ request.form.isbn if request.form else (book.isbn if book else '') }}">
+                {% if errors and 'isbn' in errors %}
+                    <div class="invalid-feedback">{{ errors['isbn'] }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="publisher" class="form-label">Publisher</label>
+                <input type="text" class="form-control" id="publisher" name="publisher" value="{{ request.form.publisher if request.form else (book.publisher if book else '') }}">
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="publication_year" class="form-label">Publication Year</label>
+                <input type="number" class="form-control {% if errors and 'publication_year' in errors %}is-invalid{% endif %}" id="publication_year" name="publication_year" placeholder="YYYY" value="{{ request.form.publication_year if request.form else (book.publication_year if book else '') }}">
+                {% if errors and 'publication_year' in errors %}
+                    <div class="invalid-feedback">{{ errors['publication_year'] }}</div>
+                {% endif %}
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label for="genre" class="form-label">Genre</label>
+                <input type="text" class="form-control" id="genre" name="genre" value="{{ request.form.genre if request.form else (book.genre if book else '') }}">
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label for="total_copies" class="form-label">Total Copies <span class="text-danger">*</span></label>
+                <input type="number" class="form-control {% if errors and 'total_copies' in errors %}is-invalid{% endif %}" id="total_copies" name="total_copies" min="0" value="{{ request.form.total_copies if request.form else (book.total_copies if book else '1') }}" required>
+                {% if errors and 'total_copies' in errors %}
+                    <div class="invalid-feedback">{{ errors['total_copies'] }}</div>
+                {% endif %}
+                {% if form_action == 'Edit' and book %}
+                <small class="form-text text-muted">Currently {{ book.total_copies - book.available_copies }} copies are issued.</small>
+                {% endif %}
+            </div>
+
+            <div class="col-md-12 mb-3">
+                <label for="cover_photo" class="form-label">Cover Photo (Optional)</label>
+                <div class="input-group">
+                    <input type="file" class="form-control" id="cover_photo" name="cover_photo" accept="image/*">
+                </div>
+                {% if book and book.cover_photo %}
+                    <div class="mt-2">
+                        <img src="{{ url_for('library.get_cover_photo', filename=book.cover_photo) }}" 
+                             alt="Book Cover" class="img-thumbnail" style="max-height: 150px;">
+                    </div>
+                {% endif %}
+                <small class="form-text text-muted">Upload a cover photo (JPEG, PNG, or GIF, max 5MB)</small>
+            </div>
+
+        </div>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> {{ form_action }} Book</button>
+            <a href="{{ url_for('library.manage_books') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+{% endblock %}

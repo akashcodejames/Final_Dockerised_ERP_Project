@@ -1,0 +1,368 @@
+<!--{% extends "base.html" %}-->
+
+<!--{% block content %}-->
+<div class="container py-4">
+  <!-- Page Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold text-primary mb-0">
+        <i class="fas fa-user-graduate me-2"></i>Student Registration
+      </h2>
+      <p class="text-muted mb-0">Add a new student to the system</p>
+    </div>
+    <a href="{{ url_for('auth.manage_batches') }}" class="btn btn-outline-primary">
+      <i class="fas fa-cogs me-1"></i> Manage Batches
+    </a>
+  </div>
+
+  <!-- Main Form Card -->
+  <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+    <div class="card-body p-0">
+      <!-- Form Tabs -->
+      <div class="row g-0">
+        <!-- Sidebar Progress -->
+        <div class="col-lg-3 bg-light">
+          <div class="p-4 h-100">
+            <div class="d-flex align-items-center mb-4">
+              <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                <i class="fas fa-graduation-cap"></i>
+              </div>
+              <h6 class="fw-bold ms-2 mb-0">Course Details</h6>
+            </div>
+
+            <div class="d-flex align-items-center mb-4">
+              <div class="bg-light border rounded-circle text-muted d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                <i class="fas fa-user"></i>
+              </div>
+              <h6 class="fw-normal ms-2 mb-0">Personal Info</h6>
+            </div>
+
+            <div class="d-flex align-items-center">
+              <div class="bg-light border rounded-circle text-muted d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                <i class="fas fa-check"></i>
+              </div>
+              <h6 class="fw-normal ms-2 mb-0">Confirmation</h6>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Form -->
+        <div class="col-lg-9">
+          <div class="p-4">
+            <form method="POST" action="{{ url_for('auth.add_student') }}" enctype="multipart/form-data">
+              <!-- Course Selection Section -->
+              <div class="mb-4">
+                <h5 class="fw-bold mb-3 text-primary">Course Selection</h5>
+                <div class="row g-3">
+                  <!-- Course -->
+                  <div class="col-md-6">
+                    <div class="form-floating">
+                      <select class="form-select" id="course_id" name="course_id" required>
+                        <option value="">Select</option>
+                        {% for course in courses %}
+                        <option value="{{ course.id }}">{{ course.code }} - {{ course.name }}</option>
+                        {% endfor %}
+                      </select>
+                      <label for="course_id"><i class="fas fa-book me-1"></i>Course</label>
+                    </div>
+                  </div>
+
+                  <!-- Batch Year -->
+                  <div class="col-md-6">
+                    <div class="form-floating">
+                      <select class="form-select" id="admission_year" name="admission_year" required>
+                        <option value="">Select</option>
+                      </select>
+                      <label for="admission_year"><i class="fas fa-calendar-alt me-1"></i>Batch Year</label>
+                    </div>
+                  </div>
+
+                  <!-- Semester -->
+                  <div class="col-md-6">
+                    <div class="form-floating">
+                      <select class="form-select" id="semester" name="semester" required>
+                        <option value="">Select</option>
+                      </select>
+                      <label for="semester"><i class="fas fa-layer-group me-1"></i>Semester</label>
+                    </div>
+                  </div>
+
+                  <!-- Batch ID -->
+                  <div class="col-md-6">
+                    <div class="form-floating">
+                      <select class="form-select" id="batch_id" name="batch_id" required>
+                        <option value="">Select</option>
+                      </select>
+                      <label for="batch_id"><i class="fas fa-users me-1"></i>Batch ID</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <hr class="my-4">
+
+              <!-- Personal Information Section -->
+              <div class="mb-4">
+                <h5 class="fw-bold mb-3 text-primary">Personal Information</h5>
+                <div class="row g-3">
+                  <!-- Photo Upload -->
+                  <div class="col-md-12 mb-2">
+                    <div class="d-flex align-items-center">
+                      <div class="photo-upload-container me-3">
+                        <div class="photo-preview" id="photoPreview">
+                          <i class="fas fa-user"></i>
+                        </div>
+                        <input type="file" class="form-control visually-hidden" name="photo" id="photoInput" accept="image/*">
+                        <label for="photoInput" class="photo-upload-button">
+                          <i class="fas fa-camera"></i>
+                        </label>
+                      </div>
+                      <div>
+                        <label class="form-label fw-semibold">Student Photo</label>
+                        <p class="text-muted small mb-0">Upload a clear photo of the student</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Name -->
+                  <div class="col-md-6">
+                    <div class="form-floating">
+                      <input type="text" class="form-control" name="first_name" id="firstName" placeholder="First Name" required>
+                      <label for="firstName"><i class="fas fa-user me-1"></i>First Name</label>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="form-floating">
+                      <input type="text" class="form-control" name="last_name" id="lastName" placeholder="Last Name" required>
+                      <label for="lastName"><i class="fas fa-user me-1"></i>Last Name</label>
+                    </div>
+                  </div>
+
+                  <!-- Roll Number -->
+                  <div class="col-md-6">
+                    <div class="form-floating">
+                      <input type="text" class="form-control" name="roll_number" id="rollNumber" placeholder="Roll Number" required>
+                      <label for="rollNumber"><i class="fas fa-id-badge me-1"></i>Roll Number</label>
+                    </div>
+                  </div>
+
+                  <!-- Contact Information -->
+                  <div class="col-md-6">
+                    <div class="form-floating">
+                      <input type="email" class="form-control" name="email" id="email" placeholder="Email" required>
+                      <label for="email"><i class="fas fa-envelope me-1"></i>Email</label>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="form-floating">
+                      <input type="tel" id="phone" name="phone" class="form-control" pattern="0?[0-9]{10}" maxlength="11"
+                             oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="Phone Number" required>
+                      <label for="phone"><i class="fas fa-phone me-1"></i>Phone Number</label>
+                    </div>
+                  </div>
+
+                  <!-- Address -->
+                  <div class="col-md-6">
+                    <div class="form-floating">
+                      <textarea class="form-control" style="height: 100px" name="address" id="address" placeholder="Address" required></textarea>
+                      <label for="address"><i class="fas fa-map-marker-alt me-1"></i>Address</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Submit Button -->
+              <div class="d-flex justify-content-between mt-4">
+                <button type="button" class="btn btn-outline-secondary px-4" onclick="window.history.back()">
+                  <i class="fas fa-arrow-left me-1"></i> Cancel
+                </button>
+                <button type="submit" class="btn btn-primary px-5">
+                  <i class="fas fa-user-plus me-1"></i> Register Student
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Photo preview functionality
+    const photoInput = document.getElementById('photoInput');
+    const photoPreview = document.getElementById('photoPreview');
+
+    photoInput.addEventListener('change', function() {
+      if (this.files && this.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          photoPreview.innerHTML = `<img src="${e.target.result}" alt="Student Photo">`;
+          photoPreview.classList.add('has-image');
+        }
+        reader.readAsDataURL(this.files[0]);
+      }
+    });
+
+    // Dependent dropdowns functionality
+    const tableNames = JSON.parse('{{ table_names | tojson | safe }}');
+    const courseDropdown = document.getElementById("course_id");
+    const yearDropdown = document.getElementById("admission_year");
+    const semesterDropdown = document.getElementById("semester");
+    const batchDropdown = document.getElementById("batch_id");
+
+    function extractData(keyIndex, courseId = null, batchYear = null, semester = null) {
+      let values = new Set();
+      tableNames.forEach(name => {
+        let parts = name.split("_");
+        let extractedCourse = parseInt(parts[2]);
+        let extractedYear = parseInt(parts[3]);
+        let extractedSemester = parseInt(parts[4]);
+        let extractedBatch = parseInt(parts[5]);
+
+        if (keyIndex === 1 && extractedCourse === parseInt(courseId)) values.add(extractedYear);
+        if (keyIndex === 2 && extractedCourse === parseInt(courseId) && extractedYear === parseInt(batchYear)) values.add(extractedSemester);
+        if (keyIndex === 3 && extractedCourse === parseInt(courseId) && extractedYear === parseInt(batchYear) && extractedSemester === parseInt(semester)) values.add(extractedBatch);
+      });
+
+      return Array.from(values).sort();
+    }
+
+    function updateDropdown(dropdown, options, placeholder) {
+      dropdown.innerHTML = `<option value="">${placeholder}</option>`;
+      options.forEach(value => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        dropdown.appendChild(option);
+      });
+      dropdown.disabled = options.length === 0;
+    }
+
+    courseDropdown.addEventListener("change", function () {
+      let years = extractData(1, this.value);
+      updateDropdown(yearDropdown, years, "Select");
+      updateDropdown(semesterDropdown, [], "Select");
+      updateDropdown(batchDropdown, [], "Select");
+    });
+
+    yearDropdown.addEventListener("change", function () {
+      let semesters = extractData(2, courseDropdown.value, this.value);
+      updateDropdown(semesterDropdown, semesters, "Select");
+      updateDropdown(batchDropdown, [], "Select");
+    });
+
+    semesterDropdown.addEventListener("change", function () {
+      let batches = extractData(3, courseDropdown.value, yearDropdown.value, this.value);
+      updateDropdown(batchDropdown, batches, "Select");
+    });
+  });
+</script>
+
+<style>
+  /* Modern form styling */
+  .form-control, .form-select, .btn {
+    border-radius: 0.5rem;
+  }
+
+  .form-control:focus, .form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+  }
+
+  .form-floating > label {
+    padding-left: 1rem;
+  }
+
+  .form-floating > .form-control,
+  .form-floating > .form-select {
+    height: 58px;
+  }
+
+  .form-floating > textarea.form-control {
+    height: 100px;
+  }
+
+  /* Photo upload styling */
+  .photo-upload-container {
+    position: relative;
+    width: 80px;
+    height: 80px;
+  }
+
+  .photo-preview {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: #f8f9fa;
+    border: 2px dashed #dee2e6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #adb5bd;
+    overflow: hidden;
+  }
+
+  .photo-preview.has-image {
+    border: 2px solid #0d6efd;
+  }
+
+  .photo-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .photo-upload-button {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: #0d6efd;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .photo-upload-button:hover {
+    background-color: #0a58ca;
+    transform: scale(1.1);
+  }
+
+  /* Additional styling */
+  .card {
+    transition: all 0.3s ease;
+  }
+
+  .btn {
+    padding: 0.5rem 1.5rem;
+    font-weight: 500;
+  }
+
+  .btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+  }
+
+  .btn-primary:hover {
+    background-color: #0a58ca;
+    border-color: #0a58ca;
+  }
+
+  @media (max-width: 991.98px) {
+    .form-floating > .form-control {
+      height: 58px;
+    }
+  }
+</style>
+{% endblock %}

@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Books{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header with Add Book Button -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Manage Books</h2>
+        <a href="{{ url_for('library.add_book') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add New Book
+        </a>
+    </div>
+    
+    <!-- Search Form -->
+    <div class="search-container mb-4 position-relative">
+        <input type="text" 
+               id="bookSearch" 
+               class="form-control search-input" 
+               placeholder="Search books by title, author, ISBN, publisher..." 
+               value="{{ search_query }}"
+               autocomplete="off">
+        <i class="fas fa-search position-absolute" 
+           style="top: 50%; transform: translateY(-50%); left: 10px;"></i>
+        {% if search_query %}
+        <button type="button" 
+                id="clearSearch" 
+                class="btn btn-sm btn-link position-absolute" 
+                style="top: 50%; transform: translateY(-50%); right: 10px;">
+            <i class="fas fa-times"></i>
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- Books Table Container -->
+    <div id="booksTableContainer">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 80px">Cover</th>
+                        <th>Title</th>
+                        <th>Author</th>
+                        <th>ISBN</th>
+                        <th class="text-center">Total Copies</th>
+                        <th class="text-center">Available</th>
+                        <th class="text-center" style="width: 150px">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for book in books.items %}
+                    <tr>
+                        <td>
+                            <div class="book-cover-container" style="width: 60px; height: 80px;">
+                                {% if book.cover_photo %}
+                                    <img src="{{ url_for('library.get_cover_photo', filename=book.cover_photo) }}"
+                                         alt="Cover of {{ book.title }}"
+                                         class="img-thumbnail"
+                                         style="width: 100%; height: 100%; object-fit: cover;">
+                                {% else %}
+                                    <div class="no-cover d-flex align-items-center justify-content-center bg-light h-100 border rounded">
+                                        <i class="fas fa-book text-muted"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="book-title"><strong>{{ book.title }}</strong></div>
+                            {% if book.publisher %}
+                                <div class="text-muted small">{{ book.publisher }}</div>
+                            {% endif %}
+                        </td>
+                        <td>{{ book.author }}</td>
+                        <td><span class="badge bg-light text-dark">{{ book.isbn or 'N/A' }}</span></td>
+                        <td class="text-center">{{ book.total_copies }}</td>
+                        <td class="text-center">
+                            <span class="badge {% if book.available_copies > 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ book.available_copies }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group">
+                                <a href="{{ url_for('library.edit_book', book_id=book.id) }}" 
+                                   class="btn btn-sm btn-outline-primary"
+                                   title="Edit Book">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-danger"
+                                        onclick="confirmDeleteBook({{ book.id }}, '{{ book.title|replace("'", "\\'") }}')"
+                                        title="Delete Book">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <div class="empty-state">
+                                <i class="fas fa-books fa-3x text-muted mb-3"></i>
+                                <h5>No books found</h5>
+                                <p class="text-muted">Try adjusting your search or add new books to the library.</p>
+                                <a href="{{ url_for('library.add_book') }}" class="btn btn-primary mt-3">
+                                    <i class="fas fa-plus"></i> Add New Book
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if books.pages > 1 %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {% if not books.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('library.manage_books', page=books.prev_num, search=search_query) if books.has_prev else '#' }}">Previous</a>
+                </li>
+                {% for page_num in books.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == books.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('library.manage_books', page=page_num, search=search_query) }}">{{ page_num }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                <li class="page-item {% if not books.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('library.manage_books', page=books.next_num, search=search_query) if books.has_next else '#' }}">Next</a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteBookModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete "<span id="deleteBookTitle"></span>"?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteBookForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Delete Book</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('bookSearch');
+    const clearButton = document.getElementById('clearSearch');
+    let searchTimeout = null;
+    let lastSearchQuery = searchInput.value;
+
+    // Function to perform search via AJAX instead of page reload
+    function performSearch() {
+        const searchQuery = searchInput.value.trim();
+        
+        // Only search if query has changed
+        if (searchQuery === lastSearchQuery) {
+            return;
+        }
+        
+        lastSearchQuery = searchQuery;
+        
+        // Update URL without page reload
+        const newUrl = new URL(window.location);
+        if (searchQuery) {
+            newUrl.searchParams.set('search', searchQuery);
+        } else {
+            newUrl.searchParams.delete('search');
+        }
+        window.history.pushState({}, '', newUrl);
+
+        // Fetch updated results
+        fetch(`${window.location.pathname}?search=${encodeURIComponent(searchQuery)}`)
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newTableContainer = doc.getElementById('booksTableContainer');
+                document.getElementById('booksTableContainer').innerHTML = newTableContainer.innerHTML;
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    // Search input event handler with debouncing
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(performSearch, 500); // Wait 500ms after last keystroke
+    });
+
+    // Handle Enter key in search
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            clearTimeout(searchTimeout);
+            performSearch();
+        }
+    });
+
+    // Clear search button handler
+    if (clearButton) {
+        clearButton.addEventListener('click', function() {
+            searchInput.value = '';
+            performSearch();
+            searchInput.focus(); // Keep focus on search input
+        });
+    }
+
+    // Delete book confirmation handler
+window.confirmDeleteBook = function(bookId, bookTitle) {
+    if (confirm(`Are you sure you want to delete "${bookTitle}"? This action cannot be undone.`)) {
+        const form = document.getElementById('deleteBookForm');
+        form.action = `/library/books/delete/${bookId}`;
+        form.submit();
+    }
+    };
+});
+</script>
+
+<style>
+    .search-input {
+        padding-left: 35px;
+        padding-right: 35px;
+    }
+    
+    .book-cover-container {
+        width: 60px;
+        height: 80px;
+        overflow: hidden;
+        border-radius: 4px;
+    }
+    
+    .book-cover {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .no-cover {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}

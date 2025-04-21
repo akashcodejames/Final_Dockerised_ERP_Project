@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Student Information -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Student Details</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h4 class="mb-3">{{ student.full_name }}</h4>
+                    <p><strong><i class="fas fa-envelope me-2"></i>Email:</strong> {{ student.email }}</p>
+                    <p><strong><i class="fas fa-phone me-2"></i>Phone:</strong> {{ student.phone }}</p>
+                    <p><strong><i class="fas fa-id-card me-2"></i>Roll Number:</strong> {{ student.roll_number }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong><i class="fas fa-graduation-cap me-2"></i>Course:</strong> {{ student.course_name }}</p>
+                    <p><strong><i class="fas fa-book me-2"></i>Semester:</strong> {{ student.semester }}</p>
+                    <p><strong><i class="fas fa-users me-2"></i>Batch ID:</strong> {{ student.batch_id }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Issue New Book Button -->
+    <div class="mb-4">
+        <a href="{{ url_for('library.issue_book', table_name=table_name, student_id=student.id) }}" 
+           class="btn btn-primary">
+            <i class="fas fa-book me-1"></i> Issue New Book
+        </a>
+        {% if has_overdue_books %}
+        <div class="alert alert-warning mt-2">
+            <i class="fas fa-exclamation-triangle"></i> 
+            Student has overdue books. Please remind them to return these books soon.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Currently Issued Books -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3>Currently Issued Books</h3>
+            {% if has_overdue_books %}
+            <form method="POST" 
+                  action="{{ url_for('library.notify_student_all_overdue', table_name=table_name, student_id_in_table=student_id) }}" 
+                  class="d-inline">
+                <button type="submit" class="btn btn-warning">
+                    <i class="fas fa-envelope"></i> Send Reminder for All Overdue Books
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if issued_books %}
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Book Title</th>
+                            <th>Author</th>
+                            <th>Issue Date</th>
+                            <th>Due Date</th>
+                            <th>Days Overdue</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for issue, book in issued_books %}
+                        <tr {% if issue.is_overdue %}class="table-danger"{% endif %}>
+                            <td>{{ book.title }}</td>
+                            <td>{{ book.author }}</td>
+                            <td>{{ issue.issue_date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ issue.due_date.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                {% if issue.is_overdue %}
+                                <span class="text-danger fw-bold">{{ issue.days_overdue }} days</span>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if issue.is_overdue %}
+                                <span class="badge bg-danger">Overdue</span>
+                                {% else %}
+                                <span class="badge bg-success">Current</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <form method="POST" action="{{ url_for('library.return_book', issue_id=issue.id) }}" 
+                                      class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-success" 
+                                            onclick="return confirm('Confirm return of this book?')">
+                                        <i class="fas fa-undo-alt"></i> Return
+                                    </button>
+                                </form>
+                                {% if issue.is_overdue %}
+                                <form method="POST" 
+                                      action="{{ url_for('library.notify_single_overdue', issue_id=issue.id) }}" 
+                                      class="d-inline ms-1">
+                                    <button type="submit" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-envelope"></i> Send Reminder
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No books currently issued to this student.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Return Confirmation Modal -->
+<div class="modal fade" id="returnConfirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Return</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to return this book?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmReturn">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Flash message auto-hide
+    setTimeout(function() {
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            if (!alert.classList.contains('alert-danger')) {
+                alert.style.display = 'none';
+            }
+        });
+    }, 5000);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Issue Book - Select Batch{% endblock %}
+
+{% block content %}
+    <h1>Issue Book - Step 1: Select Batch</h1>
+    <hr>
+
+    <form id="select-batch-form" method="GET" action="{{ url_for('library.issue_book_select_student') }}">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="course_id" class="form-label">Course <span class="text-danger">*</span></label>
+                <select class="form-select" id="course_id" name="course_id" required>
+                    <option value="" selected disabled>-- Select Course --</option>
+                    {% for course in courses %}
+                        <option value="{{ course.course_id }}">{{ course.course_name }} ({{ course.course_code }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="admission_year" class="form-label">Admission Year <span class="text-danger">*</span></label>
+                <select class="form-select" id="admission_year" name="admission_year" required disabled>
+                    <option value="" selected disabled>-- Select Year --</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="semester" class="form-label">Semester <span class="text-danger">*</span></label>
+                <select class="form-select" id="semester" name="semester" required disabled>
+                    <option value="" selected disabled>-- Select Semester --</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="batch_id" class="form-label">Batch <span class="text-danger">*</span></label>
+                <select class="form-select" id="batch_id" name="batch_id" required disabled>
+                    <option value="" selected disabled>-- Select Batch --</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" id="find-students-btn" class="btn btn-primary w-100" disabled>
+                    <i class="fas fa-users me-1"></i> Find Students
+                </button>
+            </div>
+        </div>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const courseSelect = document.getElementById('course_id');
+            const yearSelect = document.getElementById('admission_year');
+            const semesterSelect = document.getElementById('semester');
+            const batchSelect = document.getElementById('batch_id');
+            const findStudentsBtn = document.getElementById('find-students-btn');
+
+            function resetSelect(selectElement, defaultOptionText) {
+                selectElement.innerHTML = `<option value="" selected disabled>${defaultOptionText}</option>`;
+                selectElement.disabled = true;
+            }
+
+            function populateSelect(selectElement, data) {
+                resetSelect(selectElement, selectElement.firstElementChild.textContent); // Keep original placeholder
+                if (data && data.length > 0) {
+                    data.forEach(item => {
+                        const option = document.createElement('option');
+                        // API returns simple list for year/sem/batch, objects for course
+                        option.value = typeof item === 'object' ? item.id : item;
+                        option.textContent = typeof item === 'object' ? item.name : item;
+                        selectElement.appendChild(option);
+                    });
+                    selectElement.disabled = false;
+                } else {
+                    selectElement.disabled = true;
+                }
+            }
+
+            function checkFormCompletion() {
+                findStudentsBtn.disabled = !(courseSelect.value && yearSelect.value && semesterSelect.value && batchSelect.value);
+            }
+
+            courseSelect.addEventListener('change', function() {
+                const courseId = this.value;
+                resetSelect(yearSelect, '-- Select Year --');
+                resetSelect(semesterSelect, '-- Select Semester --');
+                resetSelect(batchSelect, '-- Select Batch --');
+                checkFormCompletion();
+
+                if (courseId) {
+                    fetch(`{{ url_for('library.api_get_lib_years') }}?course_id=${courseId}`)
+                        .then(response => {
+                            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                            return response.json();
+                        })
+                        .then(data => populateSelect(yearSelect, data))
+                        .catch(error => console.error('Error fetching years:', error));
+                }
+            });
+
+            yearSelect.addEventListener('change', function() {
+                const courseId = courseSelect.value;
+                const year = this.value;
+                resetSelect(semesterSelect, '-- Select Semester --');
+                resetSelect(batchSelect, '-- Select Batch --');
+                checkFormCompletion();
+
+                if (courseId && year) {
+                    fetch(`{{ url_for('library.api_get_lib_semesters') }}?course_id=${courseId}&admission_year=${year}`)
+                        .then(response => {
+                             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                             return response.json();
+                        })
+                        .then(data => populateSelect(semesterSelect, data))
+                        .catch(error => console.error('Error fetching semesters:', error));
+                }
+            });
+
+            semesterSelect.addEventListener('change', function() {
+                const courseId = courseSelect.value;
+                const year = yearSelect.value;
+                const semester = this.value;
+                resetSelect(batchSelect, '-- Select Batch --');
+                checkFormCompletion();
+
+                if (courseId && year && semester) {
+                    fetch(`{{ url_for('library.api_get_lib_batches') }}?course_id=${courseId}&admission_year=${year}&semester=${semester}`)
+                        .then(response => {
+                            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                            return response.json();
+                        })
+                        .then(data => populateSelect(batchSelect, data))
+                        .catch(error => console.error('Error fetching batches:', error));
+                }
+            });
+
+            batchSelect.addEventListener('change', checkFormCompletion);
+
+            // Initial check in case the form is pre-populated on back navigation
+            if(courseSelect.value) {
+                // Need to potentially re-trigger fetches if other fields have values too
+                // This part can get complex depending on browser back/forward caching
+                checkFormCompletion();
+            }
+
+        });
+    </script>
+{% endblock %}

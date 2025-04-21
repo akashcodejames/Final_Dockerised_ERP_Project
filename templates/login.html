@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center mt-5">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-lg border-0">
+            <div class="card-body p-4">
+                <h3 class="card-title text-center mb-4 fw-bold">Login</h3>
+                <form method="POST">
+                    <div class="mb-3">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <label for="role" class="form-label fw-semibold">Select Role</label>
+                        <select class="form-select" id="role" name="role" required onchange="toggleStudentFields(this.value)">
+                            <option value="" selected disabled>Select Role</option>
+                            <option value="admin">Administrator</option>
+                            <option value="hod">Head of Department</option>
+                            <option value="teacher">Teacher</option>
+                            <option value="librarian">Librarian</option>
+                            <option value="student">Student</option>
+                        </select>
+                    </div>
+
+                    <!-- Student-specific fields (hidden by default) -->
+                    <div id="studentFields" class="d-none">
+                        <div class="mb-3">
+                            <label for="course" class="form-label fw-semibold">Course</label>
+                            <select class="form-select" id="course" name="course" onchange="loadAdmissionYears()">
+                                <option value="" selected disabled>Select Course</option>
+                                <!-- Courses will be loaded via AJAX -->
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="admission_year" class="form-label fw-semibold">Admission Year</label>
+                            <select class="form-select" id="admission_year" name="admission_year" onchange="loadSemesters()">
+                                <option value="" selected disabled>Select Admission Year</option>
+                                <!-- Years will be loaded after course selection -->
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="semester" class="form-label fw-semibold">Semester</label>
+                            <select class="form-select" id="semester" name="semester" onchange="loadBatches()">
+                                <option value="" selected disabled>Select Semester</option>
+                                <!-- Semesters will be loaded after year selection -->
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="batch" class="form-label fw-semibold">Batch</label>
+                            <select class="form-select" id="batch" name="batch_id">
+                                <option value="" selected disabled>Select Batch</option>
+                                <!-- Batches will be loaded after semester selection -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label fw-semibold">Email Address</label>
+                        <input type="email" class="form-control" id="email" name="email" required placeholder="Enter your email">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label fw-semibold">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required placeholder="Enter your password">
+                    </div>
+
+                    <div class="text-center mb-3">
+                        <a href="{{ url_for('auth.forgot_password_page') }}" class="text-decoration-none">Forgot Password?</a>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 fw-semibold">Sign In</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    function toggleStudentFields(role) {
+        const studentFields = document.getElementById('studentFields');
+
+        if (role === 'student') {
+            studentFields.classList.remove('d-none');
+            document.getElementById('course').required = true;
+            document.getElementById('admission_year').required = true;
+            document.getElementById('semester').required = true;
+            document.getElementById('batch').required = true;
+
+            // Load courses when student role is selected
+            loadCourses();
+        } else {
+            studentFields.classList.add('d-none');
+            document.getElementById('course').required = false;
+            document.getElementById('admission_year').required = false;
+            document.getElementById('semester').required = false;
+            document.getElementById('batch').required = false;
+        }
+    }
+
+    function loadCourses() {
+        // Fetch all available courses
+        fetch('/api/courses')
+            .then(response => response.json())
+            .then(data => {
+                const courseSelect = document.getElementById('course');
+                courseSelect.innerHTML = '<option value="" selected disabled>Select Course</option>';
+
+                data.forEach(course => {
+                    const option = document.createElement('option');
+                    option.value = course.id;
+                    option.textContent = `${course.course_name} (${course.course_code})`;
+                    courseSelect.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error loading courses:', error));
+    }
+
+    function loadAdmissionYears() {
+        const courseId = document.getElementById('course').value;
+
+        if (!courseId) return;
+
+        // Fetch admission years for the selected course
+        fetch(`/api/years?course_id=${courseId}`)
+            .then(response => response.json())
+            .then(data => {
+                const yearSelect = document.getElementById('admission_year');
+                yearSelect.innerHTML = '<option value="" selected disabled>Select Admission Year</option>';
+
+                data.forEach(year => {
+                    const option = document.createElement('option');
+                    option.value = year;
+                    option.textContent = `${year} (${new Date().getFullYear() - year + 1}${getOrdinalSuffix(new Date().getFullYear() - year + 1)} Year)`;
+                    yearSelect.appendChild(option);
+                });
+
+                // Clear dependent dropdowns
+                document.getElementById('semester').innerHTML = '<option value="" selected disabled>Select Semester</option>';
+                document.getElementById('batch').innerHTML = '<option value="" selected disabled>Select Batch</option>';
+            })
+            .catch(error => console.error('Error loading admission years:', error));
+    }
+
+    function loadSemesters() {
+        const courseId = document.getElementById('course').value;
+        const admissionYear = document.getElementById('admission_year').value;
+
+        if (!courseId || !admissionYear) return;
+
+        // Fetch semesters for the selected course and year
+        fetch(`/api/semesters?course_id=${courseId}&admission_year=${admissionYear}`)
+            .then(response => response.json())
+            .then(data => {
+                const semesterSelect = document.getElementById('semester');
+                semesterSelect.innerHTML = '<option value="" selected disabled>Select Semester</option>';
+
+                data.forEach(semester => {
+                    const option = document.createElement('option');
+                    option.value = semester;
+                    option.textContent = `Semester ${semester}`;
+                    semesterSelect.appendChild(option);
+                });
+
+                // Clear dependent dropdown
+                document.getElementById('batch').innerHTML = '<option value="" selected disabled>Select Batch</option>';
+            })
+            .catch(error => console.error('Error loading semesters:', error));
+    }
+
+    function loadBatches() {
+        const courseId = document.getElementById('course').value;
+        const admissionYear = document.getElementById('admission_year').value;
+        const semester = document.getElementById('semester').value;
+
+        if (!courseId || !admissionYear || !semester) return;
+
+        // Fetch batches for the selected course, year and semester
+        fetch(`/api/batches?course_id=${courseId}&admission_year=${admissionYear}&semester=${semester}`)
+            .then(response => response.json())
+            .then(data => {
+                const batchSelect = document.getElementById('batch');
+                batchSelect.innerHTML = '<option value="" selected disabled>Select Batch</option>';
+
+                data.forEach(batch => {
+                    const option = document.createElement('option');
+                    option.value = batch.batch_id;
+                    option.textContent = `Batch ${batch.batch_id}`;
+                    batchSelect.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error loading batches:', error));
+    }
+
+    function getOrdinalSuffix(num) {
+        const j = num % 10,
+              k = num % 100;
+        if (j == 1 && k != 11) {
+            return "st";
+        }
+        if (j == 2 && k != 12) {
+            return "nd";
+        }
+        if (j == 3 && k != 13) {
+            return "rd";
+        }
+        return "th";
+    }
+</script>
+{% endblock %}

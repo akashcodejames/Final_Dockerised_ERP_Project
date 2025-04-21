@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Issue Book - Select Student{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+    {# Page Header Section #}
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-user-check me-2 text-primary"></i> {# Changed icon #}
+            Issue Book - Select Student
+        </h1>
+        <a href="{{ url_for('library.issue_book_select_batch') }}" class="btn btn-sm btn-outline-secondary d-flex align-items-center">
+            <i class="fas fa-arrow-left me-1"></i> Change Batch
+        </a>
+    </div>
+
+    {# Main Content Card #}
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+             {# Display Batch Info in Header #}
+             {% if batch_info %}
+             <h6 class="m-0 font-weight-bold text-primary mb-2">Target Batch Details</h6>
+             <div class="small text-muted lh-sm"> {# Smaller font, reduced line height for batch info #}
+                 <span><strong>Course:</strong> {{ batch_info.course_name }} ({{ batch_info.course_code }})</span> |
+                 <span><strong>Year:</strong> {{ batch_info.admission_year }}</span> |
+                 <span><strong>Semester:</strong> {{ batch_info.semester }}</span> |
+                 <span><strong>Batch No:</strong> {{ batch_info.batch_id }}</span>
+             </div>
+             {% else %}
+             <h6 class="m-0 font-weight-bold text-primary">Select Student</h6>
+             {% endif %}
+        </div>
+
+        <div class="card-body">
+            {% if students %}
+            <p class="mb-3 text-secondary small">Select the student from the list below to view their current issues or proceed to issue a new book.</p>
+            <div class="table-responsive">
+                {# Added .table-sm for thinner rows #}
+                <table class="table table-striped table-hover table-sm" id="studentSelectTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">Roll No.</th>
+                            <th scope="col">Name</th>
+                            <th scope="col">Email</th>
+                            <th scope="col">Phone</th>
+                            <th scope="col" class="text-end">Action</th> {# Right-align action #}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in students %}
+                        {# Added align-middle for vertical centering within the thinner row #}
+                        <tr class="align-middle">
+                            <td>{{ student.roll_number or '--' }}</td>
+                            <td>{{ student.first_name }} {{ student.last_name }}</td>
+                            <td>{{ student.email or '--' }}</td>
+                            <td>{{ student.phone_number or '--' }}</td>
+                            <td class="text-end">
+                                <a href="{{ url_for('library.student_detail_issue', table_name=student.table_name, student_id_in_table=student.id) }}" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="View Student Details & Issue Books">
+                                    <i class="fas fa-arrow-circle-right me-1"></i> Select
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                {# Improved 'no results' message #}
+                <div class="text-center py-5">
+                    <i class="fas fa-users-slash fa-3x text-muted mb-3"></i> {# Changed icon #}
+                    <h5 class="text-muted">No Students Found</h5>
+                    <p class="text-muted">
+                        There are no student records available for the selected batch.
+                    </p>
+                    <a href="{{ url_for('library.issue_book_select_batch') }}" class="btn btn-outline-secondary mt-3">
+                       <i class="fas fa-arrow-left me-1"></i> Go Back to Batch Selection
+                    </a>
+                </div>
+            {% endif %}
+        </div> {# End card-body #}
+    </div> {# End card #}
+</div> {# End container-fluid #}
+
+{# Optional: Add Tooltip JS Initialization if not already in base.html #}
+{#
+<script>
+  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+  var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+  })
+</script>
+#}
+{% endblock %}

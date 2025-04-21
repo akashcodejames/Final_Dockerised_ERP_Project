@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+
+{% block title %}Teacher Dashboard{% endblock %}
+
+{% block content %}
+<style>
+    /* Modern Professional Dashboard Styling */
+    :root {
+        --primary: #4361ee;
+        --primary-light: #4895ef;
+        --secondary: #3f37c9;
+        --success: #4cc9f0;
+        --info: #4895ef;
+        --warning: #f72585;
+        --danger: #e63946;
+        --light: #f8f9fa;
+        --dark: #212529;
+        --gray: #6c757d;
+    }
+    
+    .teacher-dashboard {
+        padding: 1.5rem 0;
+    }
+    
+    .welcome-section {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        color: white;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    .welcome-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .welcome-subtitle {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+    
+    .dashboard-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+    
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card-header {
+        background: linear-gradient(135deg, var(--primary-light), var(--primary));
+        color: white;
+        font-weight: 600;
+        padding: 1.25rem 1.5rem;
+        border: none;
+    }
+    
+    .card-header-icon {
+        margin-right: 0.5rem;
+        font-size: 1.2rem;
+    }
+    
+    .table-container {
+        padding: 0;
+        overflow-x: auto;
+    }
+    
+    .dashboard-table {
+        width: 100%;
+        margin-bottom: 0;
+    }
+    
+    .dashboard-table thead th {
+        background-color: rgba(67, 97, 238, 0.05);
+        color: var(--primary);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+        padding: 1rem;
+        border-bottom: 2px solid rgba(67, 97, 238, 0.1);
+    }
+    
+    .dashboard-table tbody tr {
+        transition: background-color 0.2s ease;
+    }
+    
+    .dashboard-table tbody tr:hover {
+        background-color: rgba(67, 97, 238, 0.03);
+    }
+    
+    .dashboard-table td {
+        padding: 1rem;
+        vertical-align: middle;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .subject-code {
+        font-family: 'Courier New', monospace;
+        font-weight: 600;
+        background-color: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.9rem;
+    }
+    
+    .action-btn {
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin: 0.25rem;
+        white-space: nowrap;
+    }
+    
+    .action-btn:hover {
+        transform: translateY(-2px);
+    }
+    
+    .attendance-btn {
+        background-color: white;
+        color: var(--success);
+        border: 2px solid var(--success);
+    }
+    
+    .attendance-btn:hover {
+        background-color: var(--success);
+        color: white;
+    }
+    
+    .notes-btn {
+        background-color: white;
+        color: var(--warning);
+        border: 2px solid var(--warning);
+    }
+    
+    .notes-btn:hover {
+        background-color: var(--warning);
+        color: white;
+    }
+    
+    .badge-custom {
+        padding: 0.5rem 0.75rem;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.75rem;
+    }
+    
+    .badge-semester {
+        background-color: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+    }
+    
+    .badge-year {
+        background-color: rgba(76, 201, 240, 0.1);
+        color: var(--info);
+    }
+    
+    .badge-batch {
+        background-color: rgba(247, 37, 133, 0.1);
+        color: var(--warning);
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 992px) {
+        .action-btn {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .welcome-section {
+            padding: 1.5rem;
+        }
+        
+        .welcome-title {
+            font-size: 1.75rem;
+        }
+        
+        .dashboard-table thead th {
+            font-size: 0.75rem;
+            padding: 0.75rem 0.5rem;
+        }
+        
+        .dashboard-table td {
+            padding: 0.75rem 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .action-btn {
+            padding: 0.35rem 0.7rem;
+            font-size: 0.75rem;
+            margin: 0.15rem;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .welcome-section {
+            padding: 1.25rem;
+        }
+        
+        .welcome-title {
+            font-size: 1.5rem;
+        }
+        
+        .welcome-subtitle {
+            font-size: 1rem;
+        }
+        
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .action-btn {
+            width: 100%;
+            margin: 0;
+        }
+        
+        .dashboard-table {
+            min-width: 650px;
+        }
+    }
+</style>
+
+<div class="container teacher-dashboard">
+    <!-- Welcome Section -->
+    <div class="welcome-section text-center">
+        <h1 class="welcome-title">Welcome, {{ current_user.first_name }} {{ current_user.last_name }}</h1>
+        <p class="welcome-subtitle">Manage your classes and student attendance</p>
+    </div>
+    
+    <!-- Assigned Subjects Section -->
+    <div class="dashboard-card">
+        <div class="card-header d-flex align-items-center">
+            <span class="card-header-icon">📚</span>
+            <span>Assigned Subjects</span>
+        </div>
+        <div class="card-body p-0 table-container">
+            <table class="dashboard-table">
+                <thead>
+                    <tr>
+                        <th>Course</th>
+                        <th>Subject</th>
+                        <th>Code</th>
+                        <th class="d-none d-md-table-cell">Year</th>
+                        <th class="d-none d-md-table-cell">Semester</th>
+                        <th class="d-none d-md-table-cell">Batch</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for subject in assigned_subjects %}
+                    <tr>
+                        <td>{{ subject.course_name }}</td>
+                        <td>{{ subject.subject_name }}</td>
+                        <td><span class="subject-code">{{ subject.subject_code }}</span></td>
+                        <td class="d-none d-md-table-cell">
+                            <span class="badge-custom badge-year">{{ subject.year }}</span>
+                        </td>
+                        <td class="d-none d-md-table-cell">
+                            <span class="badge-custom badge-semester">{{ subject.semester }}</span>
+                        </td>
+                        <td class="d-none d-md-table-cell">
+                            <span class="badge-custom badge-batch">{{ subject.batch_id }}</span>
+                        </td>
+                        <td>
+                            <div class="d-flex flex-wrap action-buttons">
+                                <a href="{{ url_for('auth.take_attendance',
+                                        subject_code=subject.subject_code,
+                                        batch_id=subject.batch_id,
+                                        admission_year=subject.year,
+                                        course_id=subject.course_id,
+                                        semester=subject.semester) }}"
+                                   class="action-btn attendance-btn">
+                                    <i class="fas fa-clipboard-check"></i>
+                                    <span class="d-none d-sm-inline">Attendance</span>
+                                </a>
+                                <a href="{{ url_for('auth.manage_notes',
+                                        course_id=subject.course_id,
+                                        admission_year=subject.year,
+                                        semester=subject.semester,
+                                        batch_id=subject.batch_id,
+                                        subject_code=subject.subject_code) }}"
+                                   class="action-btn notes-btn">
+                                    <i class="fas fa-book"></i>
+                                    <span class="d-none d-sm-inline">Notes</span>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Mobile View: Subject Details -->
+    <div class="d-md-none">
+        {% for subject in assigned_subjects %}
+        <div class="dashboard-card">
+            <div class="card-body">
+                <h5 class="card-title">{{ subject.subject_name }}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">{{ subject.course_name }}</h6>
+                <p class="mb-1"><strong>Code:</strong> <span class="subject-code">{{ subject.subject_code }}</span></p>
+                <p class="mb-1"><strong>Year:</strong> <span class="badge-custom badge-year">{{ subject.year }}</span></p>
+                <p class="mb-1"><strong>Semester:</strong> <span class="badge-custom badge-semester">{{ subject.semester }}</span></p>
+                <p class="mb-3"><strong>Batch:</strong> <span class="badge-custom badge-batch">{{ subject.batch_id }}</span></p>
+                
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('auth.take_attendance',
+                            subject_code=subject.subject_code,
+                            batch_id=subject.batch_id,
+                            admission_year=subject.year,
+                            course_id=subject.course_id,
+                            semester=subject.semester) }}"
+                       class="btn btn-outline-success w-100">
+                        <i class="fas fa-clipboard-check me-1"></i> Attendance
+                    </a>
+                    <a href="{{ url_for('auth.manage_notes',
+                            course_id=subject.course_id,
+                            admission_year=subject.year,
+                            semester=subject.semester,
+                            batch_id=subject.batch_id,
+                            subject_code=subject.subject_code) }}"
+                       class="btn btn-outline-warning w-100">
+                        <i class="fas fa-book me-1"></i> Notes
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

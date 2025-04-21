@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-3">
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-3">
+            <h4 class="text-primary mb-1">{{ subject_name }} ({{ subject_code }})</h4>
+            <p class="text-muted small mb-2">
+                <strong>Batch:</strong> {{ batch_id }} | <strong>Sem:</strong> {{ semester }} | <strong>Year:</strong>
+                {{ admission_year }}
+            </p>
+
+            <!-- Upload Form -->
+            <div class="upload-section mt-4">
+                <form id="upload-form" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="course_id" value="{{ course_id }}">
+                    <input type="hidden" name="admission_year" value="{{ admission_year }}">
+                    <input type="hidden" name="semester" value="{{ semester }}">
+                    <input type="hidden" name="batch_id" value="{{ batch_id }}">
+                    <input type="hidden" name="subject_code" value="{{ subject_code }}">
+                    
+                    <div class="mb-3">
+                        <label for="files" class="form-label">Select Files</label>
+                        <input type="file" class="form-control" id="files" name="files" multiple required>
+                        <small class="text-muted">Maximum total size: 200MB</small>
+                    </div>
+
+                    <div class="progress mb-3" style="display: none;">
+                        <div class="progress-bar" role="progressbar" style="width: 0%" 
+                             aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                    </div>
+
+                    <div class="upload-status mb-3" style="display: none;">
+                        <span class="status-text"></span>
+                        <div class="file-list"></div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="upload-btn">
+                        <i class="fas fa-upload"></i> Upload Files
+                    </button>
+                </form>
+            </div>
+
+            <hr class="my-2">
+
+            <!-- List of Existing Notes -->
+            <h6 class="mb-2">Existing Notes</h6>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle shadow-sm">
+                    <thead class="table-dark">
+                    <tr>
+                        <th class="small">File Name</th>
+                        <th class="text-end small">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for file in existing_notes %}
+                    <tr>
+                        <td class="small">{{ file }}</td>
+                        <td class="text-end">
+                            <a href="{{ url_for('auth.download_file', filename=file, course_id=course_id, admission_year=admission_year, semester=semester, batch_id=batch_id, subject_code=subject_code) }}"
+                               class="btn btn-success btn-sm">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            <form action="{{ url_for('auth.delete_note') }}" method="POST" class="d-inline">
+                                <input type="hidden" name="file_name" value="{{ file }}">
+                                <input type="hidden" name="course_id" value="{{ course_id }}">
+                                <input type="hidden" name="admission_year" value="{{ admission_year }}">
+                                <input type="hidden" name="semester" value="{{ semester }}">
+                                <input type="hidden" name="batch_id" value="{{ batch_id }}">
+                                <input type="hidden" name="subject_code" value="{{ subject_code }}">
+                                <button type="submit" class="btn btn-danger btn-sm"
+                                        onclick="return confirm('Delete this note?');">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="2" class="text-center small text-muted">No notes uploaded yet.</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('upload-form');
+    const fileInput = document.getElementById('files');
+    const uploadBtn = document.getElementById('upload-btn');
+    const progressBar = document.querySelector('.progress');
+    const progressBarInner = document.querySelector('.progress-bar');
+    const uploadStatus = document.querySelector('.upload-status');
+    const statusText = document.querySelector('.status-text');
+    const fileList = document.querySelector('.file-list');
+
+    // Maximum bandwidth: 100 KBPS (12.5 KB/s)
+    const MAX_BANDWIDTH = 12.5 * 1024; // Convert to bytes per second
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const files = fileInput.files;
+        if (!files.length) {
+            alert('Please select files to upload');
+            return;
+        }
+
+        // Check total file size
+        const totalSize = Array.from(files).reduce((sum, file) => sum + file.size, 0);
+        if (totalSize > 200 * 1024 * 1024) { // 200MB in bytes
+            alert('Total file size exceeds 200MB limit');
+            return;
+        }
+
+        // Show progress elements
+        progressBar.style.display = 'block';
+        uploadStatus.style.display = 'block';
+        uploadBtn.disabled = true;
+        statusText.textContent = 'Uploading...';
+        progressBarInner.style.width = '0%';
+        progressBarInner.textContent = '0%';
+        progressBarInner.classList.remove('bg-success', 'bg-danger');
+
+        const xhr = new XMLHttpRequest();
+
+        // Create a throttled form data
+        const formData = new FormData(form);
+        const originalFormData = new FormData(form);
+
+        // Custom throttled upload
+        const startTime = Date.now();
+        let loadedBytes = 0;
+        let totalBytes = totalSize;
+        let lastUpdateTime = startTime;
+        let chunkSize = MAX_BANDWIDTH; // Initial chunk size
+
+        // Set up the request
+        xhr.open('POST', '/teacher/upload_notes', true);
+
+        // Set up event listeners
+        xhr.upload.onprogress = function(e) {
+            const now = Date.now();
+            const elapsed = (now - lastUpdateTime) / 1000; // seconds
+
+            // Calculate current upload speed
+            const currentSpeed = elapsed > 0 ? (e.loaded - loadedBytes) / elapsed : 0;
+            loadedBytes = e.loaded;
+            lastUpdateTime = now;
+
+            // Calculate and display progress
+            const percentComplete = Math.round((e.loaded / e.total) * 100);
+            progressBarInner.style.width = percentComplete + '%';
+            progressBarInner.textContent = percentComplete + '%';
+
+            // Display speed capped at MAX_BANDWIDTH
+            const displaySpeed = Math.min(currentSpeed, MAX_BANDWIDTH);
+            const speedKBps = (displaySpeed / 1024).toFixed(2);
+
+            // Calculate remaining time based on throttled speed
+            const remaining = (e.total - e.loaded) / MAX_BANDWIDTH;
+            const remainingSeconds = Math.ceil(remaining);
+
+            statusText.textContent = `Uploading... ${speedKBps} KB/s (throttled to 100 KBPS) - ${remainingSeconds}s remaining`;
+        };
+
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                try {
+                    const result = JSON.parse(xhr.responseText);
+                    if (result.success) {
+                        progressBarInner.classList.add('bg-success');
+                        statusText.textContent = 'Upload completed successfully!';
+
+                        if (result.files && result.files.length) {
+                            fileList.innerHTML = '<h6 class="mt-3">Uploaded Files:</h6>' +
+                                result.files.map(file => `<div>${file}</div>`).join('');
+                        }
+
+                        setTimeout(() => window.location.reload(), 2000);
+                    } else {
+                        throw new Error(result.message || 'Upload failed');
+                    }
+                } catch (error) {
+                    handleUploadError(error);
+                }
+            } else {
+                handleUploadError(new Error(`HTTP error! status: ${xhr.status}`));
+            }
+        };
+
+        xhr.onerror = function() {
+            handleUploadError(new Error('Network error occurred'));
+        };
+
+        xhr.onabort = function() {
+            handleUploadError(new Error('Upload cancelled'));
+        };
+
+        // Instead of directly sending formData, use our custom throttled approach
+        // by using a ThrottledFormData that implements send() method
+        class ThrottledFormData {
+            constructor(originalFormData, maxBandwidth) {
+                this.originalFormData = originalFormData;
+                this.maxBandwidth = maxBandwidth; // bytes per second
+                this.blob = this.formDataToBlob(originalFormData);
+                this.size = this.blob.size;
+                this.position = 0;
+                this.chunkSize = maxBandwidth; // Start with 1 second worth of data
+                this.isPaused = false;
+            }
+
+            formDataToBlob(formData) {
+                // Convert FormData to a Blob for chunking
+                // For simplicity, we're using the original XHR's send method
+                // with the original FormData, but we're controlling the send rate
+                return new Blob([JSON.stringify(Array.from(formData.entries()))]);
+            }
+
+            send(xhr) {
+                xhr.send(this.originalFormData);
+
+                // Add throttling by controlling the socket buffer
+                const originalSetRequestHeader = xhr.setRequestHeader;
+                xhr.setRequestHeader = function(header, value) {
+                    if (header.toLowerCase() === 'content-length') {
+                        // Override content length to help with throttling
+                        originalSetRequestHeader.call(this, header, this.maxBandwidth);
+                    } else {
+                        originalSetRequestHeader.call(this, header, value);
+                    }
+                }.bind(xhr);
+
+                // Add throttling header to tell server to throttle response
+                xhr.setRequestHeader('X-Throttle-Bandwidth', MAX_BANDWIDTH.toString());
+            }
+        }
+
+        // Use our throttled approach
+        const throttledData = new ThrottledFormData(originalFormData, MAX_BANDWIDTH);
+        throttledData.send(xhr);
+
+        function handleUploadError(error) {
+            console.error('Upload error:', error);
+            statusText.textContent = `Upload failed: ${error.message}`;
+            progressBarInner.classList.add('bg-danger');
+            uploadBtn.disabled = false;
+        }
+    });
+
+    // Update file list when files are selected
+    fileInput.addEventListener('change', function() {
+        const files = Array.from(this.files);
+        const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+        const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(2);
+
+        if (files.length > 0) {
+            fileList.innerHTML = `
+                <div class="mt-2">
+                    <strong>Selected ${files.length} file(s):</strong>
+                    <ul class="list-unstyled small">
+                        ${files.map(file => `
+                            <li>${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)</li>
+                        `).join('')}
+                    </ul>
+                    <div class="text-muted">Total size: ${totalSizeMB} MB</div>
+                    <div class="text-warning">Note: Upload speed limited to 100 KBPS (12.5 KB/s)</div>
+                </div>
+            `;
+            uploadStatus.style.display = 'block';
+        } else {
+            fileList.innerHTML = '';
+            uploadStatus.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

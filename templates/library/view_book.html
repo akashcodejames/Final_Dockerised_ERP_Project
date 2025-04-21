@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}{{ book.title }} - Book Details{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-4">
+            {% if book.cover_photo %}
+            <img src="{{ url_for('library.get_cover_photo', filename=book.cover_photo) }}"
+                 alt="Cover of {{ book.title }}"
+                 class="img-fluid rounded shadow">
+            {% else %}
+            <div class="no-cover-large rounded shadow d-flex align-items-center justify-content-center bg-light">
+                <i class="fas fa-book fa-4x text-muted"></i>
+            </div>
+            {% endif %}
+        </div>
+        <div class="col-md-8">
+            <h2>{{ book.title }}</h2>
+            <div class="mb-4">
+                <p class="text-muted mb-1">by {{ book.author }}</p>
+                {% if book.publisher %}
+                <p class="text-muted mb-1">Published by {{ book.publisher }}{% if book.publication_year %} ({{ book.publication_year }}){% endif %}</p>
+                {% endif %}
+                {% if book.isbn %}
+                <p class="mb-1"><strong>ISBN:</strong> {{ book.isbn }}</p>
+                {% endif %}
+                {% if book.genre %}
+                <p class="mb-1"><strong>Genre:</strong> {{ book.genre }}</p>
+                {% endif %}
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Availability</h5>
+                    <div class="row">
+                        <div class="col-6">
+                            <p class="mb-1"><strong>Total Copies:</strong> {{ book.total_copies }}</p>
+                        </div>
+                        <div class="col-6">
+                            <p class="mb-1">
+                                <strong>Available:</strong>
+                                <span class="badge {% if book.available_copies > 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ book.available_copies }}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <a href="{{ url_for('library.edit_book', book_id=book.id) }}" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> Edit Book
+                </a>
+                <button type="button" 
+                        class="btn btn-danger"
+                        onclick="confirmDeleteBook({{ book.id }}, '{{ book.title|replace("'", "\\'") }}')">
+                    <i class="fas fa-trash-alt"></i> Delete Book
+                </button>
+                <a href="{{ url_for('library.manage_books') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to List
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% if issue_history %}
+    <div class="mt-4">
+        <h3>Issue History</h3>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Issue Date</th>
+                        <th>Due Date</th>
+                        <th>Return Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for issue in issue_history %}
+                    <tr>
+                        <td>{{ issue.issue_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ issue.due_date.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            {% if issue.return_date %}
+                                {{ issue.return_date.strftime('%Y-%m-%d') }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if issue.is_returned %}
+                                <span class="badge bg-success">Returned</span>
+                            {% elif issue.due_date < now %}
+                                <span class="badge bg-danger">Overdue</span>
+                            {% else %}
+                                <span class="badge bg-warning">Issued</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteBookModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete "<span id="deleteBookTitle"></span>"?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteBookForm" method="POST" style="display: inline;">
+                    <input type="hidden" name="action" value="delete">
+                    <button type="submit" class="btn btn-danger">Delete Book</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+window.confirmDeleteBook = function(bookId, bookTitle) {
+    document.getElementById('deleteBookTitle').textContent = bookTitle;
+    document.getElementById('deleteBookForm').action = `/library/books/delete/${bookId}`;
+    new bootstrap.Modal(document.getElementById('deleteBookModal')).show();
+};
+</script>
+{% endblock %}

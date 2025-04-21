@@ -1,0 +1,489 @@
+{% extends "base.html" %}
+
+{% block title %}Timetable Generator{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timetable Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --light-accent: #e0f7fa;
+            --light-bg: #f5f7fa;
+            --dark-text: #2c3e50;
+            --light-text: #7f8c8d;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+        }
+        
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 0rem 0;
+            color: var(--dark-text);
+        }
+        
+        /* Responsive Typography */
+        @media (max-width: 767px) {
+            .page-title {
+                font-size: 1.8rem !important;
+            }
+            .page-subtitle {
+                font-size: 0.9rem !important;
+            }
+        }
+        
+        .page-header {
+            margin-bottom: 1.5rem;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+        
+        .page-header:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background: var(--accent-color);
+            border-radius: 2px;
+        }
+        
+        .page-title {
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.25rem;
+            font-size: 2.2rem;
+        }
+        
+        .page-subtitle {
+            color: var(--light-text);
+            font-weight: 400;
+            font-size: 1rem;
+        }
+        
+        /* Responsive Card Styles */
+        .card {
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.25rem;
+            overflow: hidden;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+        
+        /* Button Responsive Styles */
+        .btn {
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            white-space: normal;
+            text-align: center;
+            min-height: 44px;
+            width: auto;
+            margin: 0.25rem;
+        }
+        
+        @media (max-width: 767px) {
+            .btn {
+                width: 100%;
+                margin: 0.25rem 0;
+                font-size: 0.9rem;
+                padding: 0.75rem 1rem;
+            }
+            
+            .btn i {
+                font-size: 1.1rem;
+            }
+            
+            .btn-lg {
+                padding: 0.875rem 1.5rem;
+                font-size: 1rem;
+            }
+        }
+        
+        /* Action Row Responsive */
+        .action-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 767px) {
+            .action-row {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .action-card {
+                width: 100%;
+            }
+        }
+        
+        .action-card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 200px;
+        }
+        
+        @media (max-width: 767px) {
+            .action-card .btn {
+                width: 100%;
+                margin: 0;
+            }
+        }
+        
+        /* App Container Responsive */
+        .app-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        @media (max-width: 767px) {
+            .app-container {
+                padding: 0 0.75rem;
+            }
+        }
+        
+        .card:hover {
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-header {
+            background: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+        }
+        
+        .card-header i {
+            font-size: 1.1rem;
+        }
+        
+        .card-body {
+            padding: 1.25rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+            box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+            border-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(52, 152, 219, 0.3);
+        }
+        
+        .btn-outline-primary {
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+            background-color: white;
+        }
+        
+        .btn-outline-primary:hover {
+            background-color: var(--accent-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .btn-lg {
+            padding: 0.6rem 1.5rem;
+            font-size: 1rem;
+        }
+        
+        .form-range::-webkit-slider-thumb {
+            background: var(--accent-color);
+        }
+        
+        .form-range::-moz-range-thumb {
+            background: var(--accent-color);
+        }
+        
+        .form-range {
+            height: 1.25rem;
+            padding: 0;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            color: var(--dark-text);
+            margin-bottom: 0.4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+        
+        .form-label span {
+            color: var(--accent-color);
+            font-weight: 600;
+            background-color: var(--light-accent);
+            padding: 0.15rem 0.5rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        
+        .text-muted {
+            color: var(--light-text) !important;
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+        }
+        
+        .alert {
+            border-radius: 8px;
+            border: none;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .alert-danger {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: var(--danger-color);
+        }
+        
+        .logo {
+            max-height: 60px;
+            margin-bottom: 1rem;
+        }
+        
+        .config-card {
+            transition: all 0.2s ease;
+            border-left: 4px solid var(--accent-color);
+        }
+        
+        .feature-list {
+            margin-top: 0.75rem;
+            padding-left: 0;
+            list-style: none;
+        }
+        
+        .feature-list li {
+            padding: 0.4rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-size: 0.9rem;
+        }
+        
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .feature-list i {
+            color: var(--accent-color);
+            font-size: 1rem;
+        }
+        
+        .slider-container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+            border-left: 3px solid var(--accent-color);
+        }
+        
+        .action-icon {
+            font-size: 2rem;
+            color: var(--accent-color);
+            margin-bottom: 0.75rem;
+        }
+        
+        .action-title {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+        
+        .action-description {
+            font-size: 0.85rem;
+            color: var(--light-text);
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container app-container">
+        <div class="text-center mb-3 page-header">
+            <img src="https://img.icons8.com/fluency/96/000000/calendar.png" alt="Logo" class="logo">
+            <h1 class="page-title">Timetable Generator</h1>
+            <p class="page-subtitle">Create optimized timetables with genetic algorithm</p>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-danger" role="alert">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <div>{{ error }}</div>
+        </div>
+        {% endif %}
+
+        <div class="action-row">
+            <div class="action-card">
+                <i class="bi bi-gear-fill action-icon"></i>
+                <h3 class="action-title">Configure</h3>
+                <p class="action-description">Set up subjects and periods for your timetable</p>
+                <a href="{{ url_for('timetable.configure_periods') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-sliders"></i> Configure Subjects
+                </a>
+            </div>
+            
+            <div class="action-card">
+                <i class="bi bi-calendar-check action-icon"></i>
+                <h3 class="action-title">Generate</h3>
+                <p class="action-description">Create optimized timetables</p>
+                <a href="#generator-settings" class="btn btn-primary">
+                    <i class="bi bi-cpu"></i> Start Generator
+                </a>
+            </div>
+            
+            <div class="action-card">
+                <i class="bi bi-pencil-square action-icon"></i>
+                <h3 class="action-title">Edit</h3>
+                <p class="action-description">Modify existing timetables</p>
+                <a href="{{ url_for('timetable.edit_timetable') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-pencil"></i> Edit Timetable
+                </a>
+            </div>
+        </div>
+
+        <!-- Generator Settings Card -->
+        <div class="card" id="generator-settings">
+            <div class="card-header">
+                <i class="bi bi-cpu"></i> Generator Settings
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('timetable.generate') }}" method="post">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="slider-container">
+                                <label for="population_size" class="form-label">
+                                    Population Size
+                                    <span id="population_size_value">10</span>
+                                </label>
+                                <input type="range" class="form-range" min="5" max="50" step="5" id="population_size" name="population_size" value="10" oninput="updateValue('population_size')">
+                                <small class="text-muted"><i class="bi bi-info-circle"></i> Larger population improves results</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="slider-container">
+                                <label for="generations" class="form-label">
+                                    Generations
+                                    <span id="generations_value">100</span>
+                                </label>
+                                <input type="range" class="form-range" min="50" max="500" step="50" id="generations" name="generations" value="100" oninput="updateValue('generations')">
+                                <small class="text-muted"><i class="bi bi-info-circle"></i> More generations = better optimization</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="slider-container">
+                                <label for="mutation_rate" class="form-label">
+                                    Mutation Rate
+                                    <span id="mutation_rate_value">0.1</span>
+                                </label>
+                                <input type="range" class="form-range" min="0.05" max="0.5" step="0.05" id="mutation_rate" name="mutation_rate" value="0.1" oninput="updateValue('mutation_rate')">
+                                <small class="text-muted"><i class="bi bi-info-circle"></i> Higher values increase randomness</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid mt-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-calendar-check"></i> Generate Timetable
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-info-circle"></i> About Timetable Generator
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5 class="mb-2">Features</h5>
+                        <ul class="feature-list">
+                            <li>
+                                <i class="bi bi-calendar-week"></i>
+                                Schedules for Monday to Friday with 7 periods per day
+                            </li>
+                            <li>
+                                <i class="bi bi-database"></i>
+                                Automatically pulls subject and teacher data
+                            </li>
+                            <li>
+                                <i class="bi bi-graph-up"></i>
+                                Optimizes based on teaching load constraints
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h5 class="mb-2">Benefits</h5>
+                        <ul class="feature-list">
+                            <li>
+                                <i class="bi bi-person-check"></i>
+                                Prevents teacher scheduling conflicts
+                            </li>
+                            <li>
+                                <i class="bi bi-clock"></i>
+                                Arranges consecutive periods when possible
+                            </li>
+                            <li>
+                                <i class="bi bi-lightning"></i>
+                                Fast generation with genetic algorithm
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateValue(id) {
+            const input = document.getElementById(id);
+            const output = document.getElementById(id + '_value');
+            output.textContent = input.value;
+        }
+    </script>
+</body>
+</html>
+{% endblock %}

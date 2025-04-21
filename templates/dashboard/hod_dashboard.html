@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}HOD Dashboard{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-primary">Head of Department Dashboard</h2>
+    <div class="badge bg-gradient-primary text-white px-3 py-2 rounded-pill">Academic Year 2024-25</div>
+  </div>
+
+  <!-- Main Dashboard Cards -->
+  <div class="row g-4">
+    <!-- Teacher Subject Management Card -->
+    <div class="col-md-6 col-lg-4">
+      <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-body p-4 d-flex flex-column">
+          <div class="d-flex align-items-center mb-3">
+            <div class="icon-circle bg-gradient-primary text-white me-3">
+              <i class="bi bi-person-workspace"></i>
+            </div>
+            <h5 class="card-title mb-0 fw-bold">Teacher Subject Management</h5>
+          </div>
+          <p class="card-text text-muted mb-4">Assign subjects to teachers and manage existing assignments for all courses and batches.</p>
+          <a href="{{ url_for('auth.manage_teacher_subjects') }}" class="btn btn-primary mt-auto rounded-3 py-2">
+            <i class="bi bi-arrow-right-circle me-2"></i> Manage Teacher Subjects
+          </a>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Timetable Management Card -->
+    <div class="col-md-6 col-lg-4">
+      <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-body p-4 d-flex flex-column">
+          <div class="d-flex align-items-center mb-3">
+            <div class="icon-circle bg-gradient-success text-white me-3">
+              <i class="bi bi-calendar-week"></i>
+            </div>
+            <h5 class="card-title mb-0 fw-bold">Timetable Management</h5>
+          </div>
+          <p class="card-text text-muted mb-4">View and manage class schedules and timetables for all courses and batches.</p>
+          <a href="{{ url_for('timetable.render_timetable') }}" class="btn btn-success mt-auto rounded-3 py-2">
+            <i class="bi bi-arrow-right-circle me-2"></i> View Timetable
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Custom styles */
+  .bg-gradient-primary {
+    background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+  }
+  
+  .bg-gradient-success {
+    background: linear-gradient(135deg, #1cc88a 0%, #13855c 100%);
+  }
+
+  .bg-gradient-light {
+    background: linear-gradient(135deg, #f8f9fc 0%, #f1f3f9 100%);
+  }
+
+  .icon-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+
+  .card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+  }
+</style>
+{% endblock %}

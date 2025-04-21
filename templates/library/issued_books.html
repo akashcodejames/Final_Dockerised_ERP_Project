@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block title %}{% if show_returned %}Issued Books History{% else %}Currently Issued Books{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3"> {# Added padding for spacing #}
+
+    {# Page Header Section #}
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h1 class="h3 mb-0 text-gray-800"> {# Slightly smaller heading, common in dashboards #}
+            <i class="fas fa-book-open me-2 text-primary"></i> {# Added icon to title #}
+            {% if show_returned %}Issued Books History{% else %}Currently Issued Books{% endif %}
+        </h1>
+        <div class="d-flex gap-2">
+            {# Toggle Button - using text and icon for clarity #}
+            {% if show_returned %}
+                <a href="{{ url_for('library.view_issued_books', search=search_query) }}" class="btn btn-sm btn-outline-secondary d-flex align-items-center">
+                    <i class="fas fa-history me-1"></i> Show Active Only
+                </a>
+            {% else %}
+                <a href="{{ url_for('library.view_issued_books', show_returned='true', search=search_query) }}" class="btn btn-sm btn-outline-secondary d-flex align-items-center">
+                    <i class="fas fa-check-double me-1"></i> Show All History
+                </a>
+            {% endif %}
+            {# Primary Action Button #}
+            <a href="{{ url_for('library.issue_book_select_batch') }}" class="btn btn-sm btn-primary d-flex align-items-center shadow-sm"> {# Added subtle shadow #}
+                <i class="fas fa-plus me-1"></i> Issue New Book
+            </a>
+        </div>
+    </div>
+
+    {# Main Content Card #}
+    <div class="card shadow mb-4"> {# Use card for better structure and shadow for depth #}
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Book Records</h6>
+            {# Search Form within Card Header #}
+            <form method="GET" action="{{ url_for('library.view_issued_books') }}" class="d-inline-block" style="max-width: 400px;">
+                <input type="hidden" name="show_returned" value="{{ 'true' if show_returned else 'false' }}">
+                <div class="input-group input-group-sm"> {# Smaller input group #}
+                    <input type="text" name="search" class="form-control border-primary" {# Subtle border color #}
+                           placeholder="Search records..."
+                           value="{{ search_query or '' }}" aria-label="Search issued books">
+                    <button class="btn btn-primary" type="submit" id="button-search" title="Search">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    {% if search_query %}
+                        <a href="{{ url_for('library.view_issued_books', show_returned='true' if show_returned else 'false') }}"
+                           class="btn btn-outline-danger" title="Clear Search"><i class="fas fa-times"></i></a> {# Icon for clear #}
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+
+        <div class="card-body">
+            {% if enriched_issues %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="issuedBooksTable"> {# Removed striped, kept hover. Added ID for potential JS enhancements #}
+                    <thead class="table-light"> {# Lighter header background #}
+                        <tr>
+                            <th scope="col">Book Title</th>
+                            <th scope="col">Author</th>
+                            <th scope="col">Student</th>
+                            <th scope="col">Email</th>
+                            <th scope="col">Issued</th>
+                            <th scope="col">Due</th>
+                            {% if show_returned %}<th scope="col">Returned</th>{% endif %}
+                            <th scope="col" class="text-center">Status</th> {# Centered status #}
+                            <th scope="col" class="text-end">Actions</th> {# Right-aligned actions #}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in enriched_issues %}
+                        {% set issue = item.issue %}
+                        {# Conditional Row Styling - more subtle #}
+                        <tr class="{{ 'table-warning bg-opacity-25' if issue.is_overdue and not issue.is_returned else ('opacity-75' if issue.is_returned else '') }} align-middle"> {# Using opacity for returned, light warning for overdue, vertical align #}
+                            <td>{{ item.book_title }}</td>
+                            <td>{{ item.book_author }}</td>
+                            <td>{{ item.student_name }}</td>
+                            <td>{{ item.student_email }}</td>
+                            <td>{{ issue.issue_date.strftime('%d %b %Y') }}</td> {# Shorter date format #}
+                            <td>{{ issue.due_date.strftime('%d %b %Y') }}</td>
+                            {% if show_returned %}
+                                <td>{{ issue.return_date.strftime('%d %b %Y %H:%M') if issue.return_date else '--' }}</td> {# '--' for N/A #}
+                            {% endif %}
+                            <td class="text-center">
+                                {# Using pill badges and more subtle colors #}
+                                {% if issue.is_returned %}
+                                    <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">Returned</span>
+                                {% elif issue.is_overdue %}
+                                    <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">Overdue</span>
+
+                                {% else %}
+                                    <span class="badge rounded-pill bg-info-subtle text-info-emphasis">Issued</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <div class="d-flex justify-content-end gap-1"> {# Flexbox for button alignment #}
+                                    {% if not issue.is_returned %}
+                                    <form action="{{ url_for('library.return_book', issue_id=issue.id) }}" method="POST" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Mark Returned">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </form>
+                                    {% else %}
+                                    {# Optional: Placeholder or disabled button for returned items #}
+                                     <button type="button" class="btn btn-sm btn-outline-secondary" disabled data-bs-toggle="tooltip" data-bs-placement="top" title="Already Returned">
+                                        <i class="fas fa-check"></i>
+                                     </button>
+                                    {% endif %}
+                                    <a href="{{ url_for('library.student_detail_issue', table_name=issue.student_table_name, student_id_in_table=issue.student_id_in_table) }}" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="View Student Details">
+                                        <i class="fas fa-user"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {# Pagination - Centered within the card body #}
+            {% if issues_pagination and issues_pagination.pages > 1 %}
+            <nav aria-label="Issued Books navigation" class="mt-4 d-flex justify-content-center">
+                <ul class="pagination pagination-sm mb-0"> {# Smaller pagination #}
+                    {# Previous Page Link #}
+                    <li class="page-item {% if not issues_pagination.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('library.view_issued_books', page=issues_pagination.prev_num, show_returned= 'true' if show_returned else 'false', search=search_query) if issues_pagination.has_prev else '#' }}" aria-label="Previous">
+                            <span aria-hidden="true">«</span>
+                        </a>
+                    </li>
+                    {# Page Numbers #}
+                    {% for page_num in issues_pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if page_num %}
+                            <li class="page-item {% if issues_pagination.page == page_num %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('library.view_issued_books', page=page_num, show_returned= 'true' if show_returned else 'false', search=search_query) }}">{{ page_num }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    {# Next Page Link #}
+                    <li class="page-item {% if not issues_pagination.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('library.view_issued_books', page=issues_pagination.next_num, show_returned= 'true' if show_returned else 'false', search=search_query) if issues_pagination.has_next else '#' }}" aria-label="Next">
+                            <span aria-hidden="true">»</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+                {# More engaging 'no results' message #}
+                <div class="text-center py-5">
+                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Issued Books Found</h5>
+                    <p class="text-muted">
+                        {% if search_query %}
+                            Your search for "{{ search_query }}" did not match any records. Try different keywords or <a href="{{ url_for('library.view_issued_books', show_returned='true' if show_returned else 'false') }}">clear the search</a>.
+                        {% elif show_returned %}
+                            There is no history of issued books yet.
+                        {% else %}
+                            There are currently no books issued matching your criteria.
+                        {% endif %}
+                    </p>
+                    <a href="{{ url_for('library.issue_book_select_batch') }}" class="btn btn-primary mt-3"><i class="fas fa-plus me-1"></i> Issue a Book Now</a>
+                </div>
+            {% endif %}
+        </div> {# End card-body #}
+    </div> {# End card #}
+</div> {# End container-fluid #}
+
+{# Tooltip Initialization (Important: Add this JS snippet to your base template or page-specific JS) #}
+{#
+<script>
+  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+  var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+  })
+</script>
+#}
+{% endblock %}

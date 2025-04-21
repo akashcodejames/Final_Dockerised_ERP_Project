@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 40px auto;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            background-color: #ffffff;
+        }
+        
+        .email-header {
+            background: linear-gradient(135deg, #5B6AF0, #5054B3);
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .email-header h2 {
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 24px;
+            margin: 0;
+            letter-spacing: 0.5px;
+        }
+        
+        .email-body {
+            padding: 40px 30px;
+            background-color: #ffffff;
+        }
+        
+        .email-body p {
+            margin-bottom: 20px;
+            color: #555;
+            font-size: 16px;
+        }
+        
+        .password-container {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 25px 0;
+            text-align: center;
+            border-left: 4px solid #5B6AF0;
+        }
+        
+        .password-container h3 {
+            color: #333;
+            font-size: 18px;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+        
+        .button-container {
+            text-align: center;
+            margin: 30px 0 20px;
+        }
+        
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #5B6AF0, #5054B3);
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 4px 10px rgba(80, 84, 179, 0.2);
+        }
+        
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(80, 84, 179, 0.3);
+        }
+        
+        .email-footer {
+            background-color: #fafafa;
+            padding: 20px;
+            text-align: center;
+            color: #888;
+            font-size: 13px;
+            border-top: 1px solid #eee;
+        }
+        
+        .social-icons {
+            margin: 15px 0;
+        }
+        
+        .social-icons a {
+            display: inline-block;
+            margin: 0 8px;
+            color: #5B6AF0;
+            text-decoration: none;
+        }
+        
+        .logo {
+            margin-bottom: 15px;
+        }
+        
+        .logo img {
+            height: 40px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="email-container">
+    <div class="email-header">
+        <div class="logo">
+            <!-- Replace with your actual logo -->
+            <img src="/api/placeholder/120/40" alt="Your Company Logo" />
+        </div>
+        <h2>Welcome to Our Service!</h2>
+    </div>
+    
+    <div class="email-body">
+        
+        <p>Your password has been generated:</p>
+        
+        <div class="password-container">
+            <h3>{{password}}</h3>
+        </div>
+        
+        <div class="button-container">
+            <a href="http://yourwebsite.com/login" class="button">Login to Your Account</a>
+        </div>
+        
+        <p>If you have any questions or need assistance, our support team is here to help. Simply reply to this email or contact us through our support portal.</p>
+        
+        <p>Best regards,<br>The Team at Your Company</p>
+    </div>
+    
+    <div class="email-footer">
+        <div class="social-icons">
+            <!-- Replace these with your actual social media links -->
+            <a href="#">Twitter</a> • 
+            <a href="#">Facebook</a> • 
+            <a href="#">Instagram</a> • 
+            <a href="#">LinkedIn</a>
+        </div>
+        <p>© 2025 Your Company. All rights reserved.</p>
+        <p>123 Business Street, City, Country</p>
+    </div>
+</div>
+
+</body>
+</html>

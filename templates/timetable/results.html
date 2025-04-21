@@ -1,0 +1,664 @@
+{% extends "base.html" %}
+
+{% block title %}Generated Timetable - Timetable Generator{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generated Timetable</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3a0ca3;
+            --accent-color: #4cc9f0;
+            --light-bg: #f8f9fa;
+            --dark-text: #212529;
+            --light-text: #6c757d;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+        }
+        
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-top: 0rem;
+            padding-bottom: 2rem;
+            color: var(--dark-text);
+        }
+        
+        .page-header {
+            margin-bottom: 2.5rem;
+            position: relative;
+            padding-bottom: 1rem;
+        }
+        
+        .page-header:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: var(--primary-color);
+            border-radius: 2px;
+        }
+        
+        .page-title {
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .page-subtitle {
+            color: var(--light-text);
+            font-weight: 400;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+        
+        .btn {
+            border-radius: 8px;
+            padding: 0.6rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 6px rgba(67, 97, 238, 0.2);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(67, 97, 238, 0.3);
+        }
+        
+        .btn-secondary {
+            background-color: #fff;
+            color: var(--dark-text);
+            border-color: #dee2e6;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #f8f9fa;
+            color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.08);
+        }
+        
+        .timetable-container {
+            background-color: #fff;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            margin-bottom: 3rem;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .timetable-container:hover {
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+            transform: translateY(-5px);
+        }
+        
+        .batch-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 1.5rem;
+            border-radius: 16px 16px 0 0;
+        }
+        
+        .batch-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .batch-info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .batch-info-item i {
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+        
+        .timetable {
+            width: 100%;
+            margin-bottom: 0;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        
+        .timetable th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            text-align: center;
+            padding: 1rem;
+            border: none;
+        }
+        
+        .timetable td {
+            padding: 1rem;
+            text-align: center;
+            vertical-align: middle;
+            border: 1px solid #eee;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+        
+        .timetable tr:nth-child(even) {
+            background-color: rgba(248, 249, 250, 0.7);
+        }
+        
+        .timetable tr:hover td {
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+        
+        .lunch {
+            background-color: rgba(46, 204, 113, 0.1) !important;
+            font-weight: bold;
+            color: var(--success-color);
+        }
+        
+        .empty-period {
+            background-color: rgba(248, 249, 250, 0.5);
+            color: var(--light-text);
+            font-style: italic;
+        }
+        
+        .teacher-name {
+            color: var(--primary-color);
+            font-size: 0.8rem;
+            display: block;
+            margin-top: 0.3rem;
+        }
+        
+        .subject-name {
+            font-weight: 600;
+        }
+        
+        .time-label {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.8);
+            display: block;
+            margin-top: 0.3rem;
+        }
+        
+        .analysis-container {
+            background-color: white;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-top: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+        
+        .analysis-header {
+            margin-bottom: 2rem;
+            position: relative;
+            padding-bottom: 1rem;
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+        
+        .analysis-header:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 80px;
+            height: 4px;
+            background: var(--primary-color);
+            border-radius: 2px;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            margin-bottom: 1.5rem;
+        }
+        
+        .card:hover {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            transform: translateY(-3px);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            font-weight: 600;
+            padding: 1rem 1.5rem;
+            border: none;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        .table {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .table th {
+            background-color: rgba(67, 97, 238, 0.1);
+            color: var(--primary-color);
+            font-weight: 600;
+            border-top: none;
+        }
+        
+        .badge {
+            padding: 0.5rem 0.8rem;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.75rem;
+        }
+        
+        .bg-success {
+            background-color: var(--success-color) !important;
+        }
+        
+        .bg-danger {
+            background-color: var(--danger-color) !important;
+        }
+        
+        .edit-controls {
+            background-color: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .edit-controls h4 {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .edit-controls p {
+            color: var(--light-text);
+            margin-bottom: 1rem;
+        }
+        
+        .save-changes-btn {
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            font-weight: 500;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .save-changes-btn:hover {
+            background-color: #27ae60;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(46, 204, 113, 0.3);
+        }
+        
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            
+            body {
+                background: white;
+                padding: 0;
+                margin: 0;
+            }
+            .container-fluid {
+                padding: 0;
+            }
+            .timetable-container {
+                box-shadow: none;
+                margin-bottom: 2rem;
+                page-break-after: always;
+            }
+            .timetable {
+                box-shadow: none;
+                border: 1px solid #dee2e6;
+            }
+            .batch-header {
+                padding: 1rem;
+                background: #f8f9fa;
+                color: #212529;
+                border-bottom: 2px solid var(--primary-color);
+            }
+            .timetable th {
+                background-color: #f8f9fa;
+                color: #212529;
+                border: 1px solid #dee2e6;
+            }
+            .time-label {
+                color: #6c757d;
+            }
+            .card {
+                box-shadow: none;
+                border: 1px solid #dee2e6;
+            }
+            .card-header {
+                background: #f8f9fa;
+                color: #212529;
+                border-bottom: 2px solid var(--primary-color);
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12 text-center page-header">
+            <h1 class="display-5 page-title">Generated Timetables</h1>
+            <p class="lead page-subtitle">Timetables for all batches from Monday to Friday</p>
+            <div class="mt-4 no-print action-buttons">
+                <a href="{{ url_for('timetable.render_timetable') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Generator
+                </a>
+                <a href="{{ url_for('timetable.edit_timetable') }}" class="btn btn-primary">
+                    <i class="bi bi-pencil-square"></i> Edit Saved Timetable
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            {% if success_message %}
+            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i> {{ success_message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+            
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Timetable Generation Results</h5>
+                </div>
+                <div class="card-body">
+                    {% if algorithm_info %}
+                    <div class="alert alert-info">
+                        <h5>Algorithm Information</h5>
+                        <p>Your timetable was generated using an enhanced genetic algorithm with the following parameters:</p>
+                        <ul>
+                            <li><strong>Population Size:</strong> {{ algorithm_info.population_size }}</li>
+                            <li><strong>Generations:</strong> {{ algorithm_info.generations }}</li>
+                            <li><strong>Mutation Rate:</strong> {{ algorithm_info.mutation_rate }}</li>
+                            <li><strong>Elite Size:</strong> {{ algorithm_info.elite_size }}</li>
+                        </ul>
+                        <h6>Improvements Applied:</h6>
+                        <ul>
+                            {% for improvement in algorithm_info.improvements %}
+                            <li>{{ improvement }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Save All Timetables Button -->
+                    <div class="alert alert-primary mb-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="mb-1"><i class="bi bi-database-fill-check"></i> Save All Timetables</h5>
+                                <p class="mb-0">Click the button to save all batch timetables to the database at once.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mb-3">
+                        <div>
+                        <form action="{{ url_for('timetable.save_all_timetables') }}" method="POST" class="d-inline">
+                            <input type="hidden" name="timetable_data" value='{{ timetable|tojson|safe }}'>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-save"></i> Save All Timetables To Database
+                            </button>
+                            </form>
+                        </div>
+                        <div>
+                            <a href="{{ url_for('timetable.render_timetable') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Home
+                            </a>
+                        </div>
+                    </div>
+
+            {% for batch in batches %}
+            <!-- Save controls -->
+            <div class="row mb-4 no-print">
+                <div class="col-12">
+                    <div class="edit-controls">
+                        <h4><i class="bi bi-database-check"></i> Save Timetable for
+                        {% set parts = batch.split(',') %}
+                        {% if course_map and parts[0].strip() in course_map %}
+                            {{ course_map[parts[0].strip()] }}
+                        {% else %}
+                            {{ parts[0] }}
+                        {% endif %} -
+                        Year {{ parts[1].strip() }}, Semester {{ parts[2].strip() }}, Batch {{ parts[3].strip() }}
+                        </h4>
+                        <p>Save this batch's timetable to the database for future reference.</p>
+                        <div class="d-flex">
+                            <form id="saveTimetableForm_{{ batch|replace(',', '_')|replace(' ', '_') }}" action="{{ url_for('timetable.save_timetable') }}" method="POST" class="d-inline">
+                                <input type="hidden" name="batch_name" value="{{ batch }}">
+                                <input type="hidden" name="timetable_data" value='{{ timetable[batch]|tojson|safe }}'>
+                                <button type="submit" class="btn save-changes-btn">
+                                    <i class="bi bi-save"></i> Save This Batch to Database
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timetable container -->
+            <div class="timetable-container">
+                <div class="batch-header">
+                    <h3 class="mb-0">Batch Timetable</h3>
+                    <div class="batch-info">
+                        {% set parts = batch.split(',') %}
+                        <div class="batch-info-item">
+                            <i class="bi bi-book"></i>
+                            <span>Course: {% if course_map and parts[0].strip() in course_map %}{{ course_map[parts[0].strip()] }}{% else %}{{ parts[0] }}{% endif %}</span>
+                        </div>
+                        <div class="batch-info-item">
+                            <i class="bi bi-calendar3"></i>
+                            <span>Year: {{ parts[1] }}</span>
+                        </div>
+                        <div class="batch-info-item">
+                            <i class="bi bi-123"></i>
+                            <span>Semester: {{ parts[2] }}</span>
+                        </div>
+                        <div class="batch-info-item">
+                            <i class="bi bi-people"></i>
+                            <span>Batch: {{ parts[3] }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table timetable">
+                        <thead>
+                        <tr>
+                            <th width="10%">Day</th>
+                            {% for period in range(1, periods_per_day + 1) %}
+                            {% if period == 4 %}
+                            <th width="12%">
+                                Lunch Break
+                                <span class="time-label">12:30 PM - 1:30 PM</span>
+                            </th>
+                            {% endif %}
+                            <th width="12%">
+                                Period {{ period }}
+                                {% if period == 1 %}
+                                <span class="time-label">9:00 AM - 10:00 AM</span>
+                                {% elif period == 2 %}
+                                <span class="time-label">10:00 AM - 11:00 AM</span>
+                                {% elif period == 3 %}
+                                <span class="time-label">11:30 AM - 12:30 PM</span>
+                                {% elif period == 4 %}
+                                <span class="time-label">1:30 PM - 2:30 PM</span>
+                                {% elif period == 5 %}
+                                <span class="time-label">2:30 PM - 3:30 PM</span>
+                                {% elif period == 6 %}
+                                <span class="time-label">3:45 PM - 4:45 PM</span>
+                                {% elif period == 7 %}
+                                <span class="time-label">4:45 PM - 5:45 PM</span>
+                                {% endif %}
+                            </th>
+                            {% endfor %}
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for day in days %}
+                        <tr>
+                            <td><strong>{{ day }}</strong></td>
+                            {% for period in range(periods_per_day) %}
+                            {% if period == 3 %}
+                            <td class="lunch">
+                                <i class="bi bi-cup-hot"></i> LUNCH BREAK
+                            </td>
+                            {% endif %}
+
+                            {% if timetable[batch][day][period] %}
+                            {% set subject, teacher = timetable[batch][day][period].rsplit(' (', 1) %}
+                            {% set teacher = teacher.rstrip(')') %}
+                            <td>
+                                <div>
+                                    <span class="subject-name">{{ subject }}</span>
+                                    <span class="teacher-name">
+                                        <i class="bi bi-person-badge"></i> {{ teacher }}
+                                    </span>
+                                </div>
+                            </td>
+                            {% else %}
+                            <td class="empty-period">
+                                <i class="bi bi-dash-circle"></i> FREE
+                            </td>
+                            {% endif %}
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="row no-print">
+        <div class="col-12">
+            <div class="analysis-container">
+                <h3 class="analysis-header">
+                    <i class="bi bi-graph-up"></i> Timetable Analysis
+                </h3>
+
+                {% for batch in batches %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-clipboard-data"></i>
+                            {% set parts = batch.split(',') %}
+                            {% if course_map and parts[0].strip() in course_map %}
+                                {{ course_map[parts[0].strip()] }}
+                            {% else %}
+                                {{ parts[0] }}
+                            {% endif %} -
+                            Year {{ parts[1].strip() }}, Semester {{ parts[2].strip() }}, Batch {{ parts[3].strip() }} - Subject Analysis
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                <tr>
+                                    <th>Subject</th>
+                                    <th>Weekly Periods</th>
+                                    <th>Max Weekly</th>
+                                    <th>Status</th>
+                                    <th>Daily Distribution</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for subject, data in analysis[batch]['subjects'].items() %}
+                                <tr>
+                                    <td>{{ subject }}</td>
+                                    <td>{{ data.weekly_total }}</td>
+                                    <td>{{ data.max_weekly }}</td>
+                                    <td>
+                                        {% if data.compliant %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle"></i> Compliant
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-danger">
+                                            <i class="bi bi-exclamation-triangle"></i> Non-Compliant
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small>
+                                            {% for day, day_data in data.daily_counts.items() %}
+                                            {{ day }}: {{ day_data.count }}/{{ day_data.max }}
+                                            {% if not loop.last %} • {% endif %}
+                                            {% endfor %}
+                                        </small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="mt-4 p-3 bg-light rounded">
+                            <p class="mb-0">
+                                <i class="bi bi-info-circle text-primary"></i>
+                                <strong>Empty Periods:</strong> {{ analysis[batch]['empty_periods'] }} out of {{
+                                days|length * periods_per_day }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // No edit functionality needed - timetable is saved as-is
+        // The timetable data is already set in the form
+    });
+</script>
+</body>
+</html>
+{% endblock %}

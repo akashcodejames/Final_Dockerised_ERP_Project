@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}{{ table_name }} Data{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center">
+        <h2>{{ table_name }}</h2>
+        <div>
+            <a href="{{ url_for('auth.export_table', table_name=table_name) }}" class="btn btn-success">
+                Export to CSV
+            </a>
+            <a href="{{ url_for('auth.database_management') }}" class="btn btn-secondary">
+                Back to Tables
+            </a>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="{{ request.args.get('search', '') }}"
+                           placeholder="Enter search term">
+                </div>
+                <div class="col-md-12">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                    <a href="{{ url_for('auth.view_table', table_name=table_name) }}" 
+                       class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="table-responsive mt-4">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    {% for column in columns %}
+                    <th>{{ column }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr>
+                    {% for column in columns %}
+                    <td>{{ record[column]|default('None') }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mt-4">
+        <h4>Table Schema</h4>
+        <div id="schemaInfo" class="card">
+            <div class="card-body">
+                Loading schema information...
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('{{ url_for("auth.view_schema", table_name=table_name) }}')
+        .then(response => response.json())
+        .then(data => {
+            const schemaHtml = data.columns.map(column => `
+                <div class="mb-2">
+                    <strong>${column.name}</strong>
+                    <ul class="list-unstyled ms-3">
+                        <li>Type: ${column.type}</li>
+                        <li>Nullable: ${column.nullable}</li>
+                        <li>Primary Key: ${column.primary_key}</li>
+                        ${column.default ? `<li>Default: ${column.default}</li>` : ''}
+                    </ul>
+                </div>
+            `).join('');
+
+            document.querySelector('#schemaInfo .card-body').innerHTML = schemaHtml;
+        })
+        .catch(error => {
+            document.querySelector('#schemaInfo .card-body').innerHTML = 
+                'Error loading schema information.';
+        });
+});
+</script>
+{% endblock %}

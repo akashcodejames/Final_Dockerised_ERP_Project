@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Manage Librarians</h2>
+    
+    <div class="mb-3">
+        <a href="{{ url_for('auth.add_librarian') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add New Librarian
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Photo</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Joining Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for librarian in librarians %}
+                <tr>
+                    <td>
+                        {% if librarian.photo_path %}
+                            <img src="{{ url_for('auth.librarian_photo', filename=librarian.photo_path.split('/')[-1]) }}" 
+                                 class="rounded-circle" width="50" height="50" alt="Profile Photo">
+                        {% else %}
+                            <img src="{{ url_for('static', filename='images/default_avatar.png') }}" 
+                                 class="rounded-circle" width="50" height="50" alt="Default Photo">
+                        {% endif %}
+                    </td>
+                    <td>{{ librarian.first_name }} {{ librarian.last_name }}</td>
+                    <td>{{ librarian.email }}</td>
+                    <td>{{ librarian.phone }}</td>
+                    <td>{{ librarian.joining_date.strftime('%Y-%m-%d') if librarian.joining_date else 'N/A' }}</td>
+                    <td>
+                        <a href="{{ url_for('auth.edit_librarian', librarian_id=librarian.id) }}" 
+                           class="btn btn-sm btn-primary">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="#" onclick="confirmDelete({{ librarian.id }})" 
+                           class="btn btn-sm btn-danger">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function confirmDelete(librarianId) {
+    if (confirm('Are you sure you want to delete this librarian?')) {
+        window.location.href = "{{ url_for('auth.delete_librarian', librarian_id=0) }}".replace('0', librarianId);
+    }
+}
+</script>
+{% endblock %}
