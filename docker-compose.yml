@@ -22,25 +22,17 @@ services:
     expose:
       - "5001"
     environment:
-      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY}
-      - DATABASE_URL=mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}
-      - MAIL_USERNAME=${MAIL_USERNAME}
-      - MAIL_PASSWORD=${MAIL_PASSWORD}
-      - FLASK_DEBUG=${FLASK_DEBUG}
-      - REDIS_HOST=redis
-      - SMTP_SERVER=${SMTP_SERVER}
-      - SMTP_PORT=${SMTP_PORT}
-      - SMTP_USERNAME=${SMTP_USERNAME}
-      - SMTP_PASSWORD=${SMTP_PASSWORD}
-      - GUNICORN_WORKERS=4  # Optional: override workers count
-      - GUNICORN_TIMEOUT=30 # Optional: override timeout
+      - FLASK_APP=app.py
+      - FLASK_DEBUG=1  # Enable debug mode
+      - PYTHONUNBUFFERED=1  # Ensure Python output isn't buffered
+    volumes:
+      - .:/app
+    command: ["flask", "run", "--host=0.0.0.0", "--port=5001", "--reload"]  # Add --reload flag
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - .:/app
     networks:
       - app-network
     healthcheck:

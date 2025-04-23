@@ -1784,100 +1784,88 @@ def download_attendance(subject_code):
 @bp.route('/student/view_notes/<subject_code>', methods=['GET'])
 @login_required
 def view_notes(subject_code):
+    if current_user.role != 'student':
+        flash('Access denied!', 'danger')
+        return redirect(url_for(f'auth.{current_user.role}_dashboard'))
+
     # Security Check: Ensure session data matches
     if not all(key in session for key in ['batch_id', 'course_id', 'admission_year', 'semester', 'student_id', 'batch_table_name']):
         flash("Session data is missing or corrupted!", "danger")
         return redirect(url_for('auth.student_dashboard'))
 
-    batch_id = session['batch_id']
-    course_id = session['course_id']
-    admission_year = session['admission_year']
-    semester = session['semester']
-    student_id = session['student_id']
-    table_name = session['batch_table_name']
+    current_path = request.args.get('path', '')
 
-    # Validate subject exists for this batch, semester, and course
-    result = db.session.execute(text("""
-        SELECT id,subject_name FROM course_subjects
-        WHERE course_id = :course_id 
-        AND batch_id = :batch_id
-        AND year = :admission_year
-        AND semester = :semester
-        AND subject_code = :subject_code
-        AND is_active = 1
-    """), {
-        "course_id": course_id,
-        "batch_id": batch_id,
-        "admission_year": admission_year,
-        "semester": semester,
-        "subject_code": subject_code
-    }).fetchone()
-
-    if not result:
-        flash("Unauthorized access: Subject not found or not assigned to this batch!", "danger")
-        return redirect(url_for('auth.student_dashboard'))
-
-    # Subject is valid → Get Notes
+    # Get base folder path
     BASE_UPLOAD_FOLDER = os.path.join(os.getcwd(), "uploads")
-    subject_folder = os.path.join(BASE_UPLOAD_FOLDER, f"{course_id}/{admission_year}/semester_{semester}/batch_{batch_id}/subject_{subject_code}")
+    subject_folder = os.path.join(
+        BASE_UPLOAD_FOLDER,
+        f"{session['course_id']}/{session['admission_year']}/semester_{session['semester']}/batch_{session['batch_id']}/subject_{subject_code}"
+    )
 
-    existing_notes = os.listdir(subject_folder) if os.path.exists(subject_folder) else []
-    print(existing_notes)
-    print("hi")
+    # Add current path to subject folder
+    current_folder = os.path.join(subject_folder, current_path)
+
+    # Get list of files and folders with their timestamps
+    items = []
+    if os.path.exists(current_folder):
+        for item in os.listdir(current_folder):
+            full_path = os.path.join(current_folder, item)
+            is_dir = os.path.isdir(full_path)
+            stat = os.stat(full_path)
+
+            # Get the timestamp
+            timestamp = max(stat.st_ctime, stat.st_mtime)
+
+            items.append({
+                'name': item,
+                'is_directory': is_dir,
+                'path': os.path.join(current_path, item) if current_path else item,
+                'timestamp': timestamp,
+                'size': stat.st_size if not is_dir else 0,
+                'modified': datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+            })
+
+    # Sort items: folders first, then by timestamp (newest first)
+    items.sort(key=lambda x: (-int(x['is_directory']), -x['timestamp']))
 
     return render_template('dashboard/view_notes.html',
-                           batch_id=batch_id,
-                           admission_year=admission_year,
-                           semester=semester,
-                           course_id=course_id,
-                           subject_code=subject_code,
-                           subject_name=result.subject_name,
-                           existing_notes=existing_notes)
+                         batch_id=session['batch_id'],
+                         admission_year=session['admission_year'],
+                         semester=session['semester'],
+                         course_id=session['course_id'],
+                         subject_code=subject_code,
+                         current_path=current_path,
+                         items=items)
 
-@bp.route('/student/download_note_student/<subject_code>/<filename>', methods=['GET'])
+
+@bp.route('/student/download_note/<subject_code>/<path:filename>')
 @login_required
 def download_note_student(subject_code, filename):
+    if current_user.role != 'student':
+        flash('Access denied!', 'danger')
+        return redirect(url_for(f'auth.{current_user.role}_dashboard'))
+
     # Security Check: Ensure session data matches
     if not all(key in session for key in ['batch_id', 'course_id', 'admission_year', 'semester', 'student_id', 'batch_table_name']):
         flash("Session data is missing or corrupted!", "danger")
         return redirect(url_for('auth.student_dashboard'))
 
-    batch_id = session['batch_id']
-    course_id = session['course_id']
-    admission_year = session['admission_year']
-    semester = session['semester']
-    student_id = session['student_id']
-    table_name = session['batch_table_name']
-
-    # Validate subject exists for this batch, semester, and course
-    result = db.session.execute(text("""
-        SELECT id FROM course_subjects
-        WHERE course_id = :course_id 
-        AND batch_id = :batch_id
-        AND year = :admission_year
-        AND semester = :semester
-        AND subject_code = :subject_code
-        AND is_active = 1
-    """), {
-        "course_id": course_id,
-        "batch_id": batch_id,
-        "admission_year": admission_year,
-        "semester": semester,
-        "subject_code": subject_code
-    }).fetchone()
-
-    if not result:
-        flash("Unauthorized access: Subject not found or not assigned to this batch!", "danger")
-        return redirect(url_for('auth.student_dashboard'))
-
-    # Subject is valid → Allow download
+    # Construct the file path
     BASE_UPLOAD_FOLDER = os.path.join(os.getcwd(), "uploads")
-    subject_folder = os.path.join(BASE_UPLOAD_FOLDER, f"{course_id}/{admission_year}/semester_{semester}/batch_{batch_id}/subject_{subject_code}")
-    file_path = os.path.join(subject_folder, filename)
+    file_path = os.path.join(
+        BASE_UPLOAD_FOLDER,
+        f"{session['course_id']}/{session['admission_year']}/semester_{session['semester']}/batch_{session['batch_id']}/subject_{subject_code}",
+        filename
+    )
+
+    # Validate path is within allowed directory
+    if not os.path.commonprefix([os.path.abspath(file_path), BASE_UPLOAD_FOLDER]).startswith(BASE_UPLOAD_FOLDER):
+        flash("Invalid file path!", "danger")
+        return redirect(url_for('auth.view_notes', subject_code=subject_code))
 
     if not os.path.exists(file_path):
         flash("File not found!", "danger")
-        return redirect(url_for('student.view_notes', subject_code=subject_code))
+        return redirect(url_for('auth.view_notes', subject_code=subject_code))
 
     return send_file(file_path, as_attachment=True)
 
@@ -2368,62 +2356,71 @@ def attendance_report():
                      mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
-
-
-
-
-
-@bp.route('/teacher/manage_notes/<int:batch_id>/<int:admission_year>/<int:semester>/<int:course_id>/<subject_code>', methods=['GET', 'POST'])
+@bp.route('/teacher/manage_notes/<int:batch_id>/<int:admission_year>/<int:semester>/<int:course_id>/<subject_code>',
+          methods=['GET'])
 @login_required
 def manage_notes(batch_id, admission_year, semester, course_id, subject_code):
     if current_user.role != 'teacher':
         flash('Access denied!', 'danger')
-        return redirect(url_for(f'auth.{current_user.role}_dashboard'))
+        return redirect(url_for('auth.teacher_dashboard'))
 
-    teacher_id = current_user.teacher_profile.id
-
-    # Security Check: Ensure the teacher is assigned to this subject
-    result = db.session.execute(text("""
-        SELECT cs.id 
-        FROM subject_assignments sa
-        JOIN course_subjects cs ON sa.course_subject_id = cs.id
-        WHERE sa.teacher_id = :teacher_id 
-          AND cs.batch_id = :batch_id 
-          AND cs.year = :admission_year
-          AND cs.semester = :semester
-          AND cs.course_id = :course_id
-          AND cs.subject_code = :subject_code
-    """), {
-        "teacher_id": teacher_id,
-        "batch_id": batch_id,
-        "admission_year": admission_year,
-        "semester": semester,
-        "course_id": course_id,
-        "subject_code": subject_code
-    }).fetchone()
-
-    if not result:
-        flash('Unauthorized access: You are not assigned to this subject!', 'danger')
+    current_path = request.args.get('path', '')
+    
+    # Clean and validate the path
+    clean_path = os.path.normpath(current_path)
+    if clean_path.startswith('..') or clean_path.startswith('/'):
+        flash('Invalid path!', 'danger')
         return redirect(url_for('auth.teacher_dashboard'))
 
     BASE_UPLOAD_FOLDER = os.path.join(os.getcwd(), "uploads")
-    # Define subject folder path
-    subject_folder = os.path.join(BASE_UPLOAD_FOLDER, f"{course_id}/{admission_year}/semester_{semester}/batch_{batch_id}/subject_{subject_code}")
+    subject_folder = os.path.join(
+        BASE_UPLOAD_FOLDER,
+        f"{course_id}/{admission_year}/semester_{semester}/batch_{batch_id}/subject_{subject_code}"
+    )
+    
+    current_folder = os.path.join(subject_folder, clean_path)
 
-    # Create directory if not exists
-    if not os.path.exists(subject_folder):
-        os.makedirs(subject_folder)
+    # Validate the current folder is within the subject folder
+    if not os.path.commonprefix([os.path.abspath(current_folder), subject_folder]).startswith(subject_folder):
+        flash('Invalid path!', 'danger')
+        return redirect(url_for('auth.teacher_dashboard'))
 
-    # List existing notes
-    existing_notes = os.listdir(subject_folder)
+    # Create folder if it doesn't exist
+    os.makedirs(current_folder, exist_ok=True)
+
+    items = []
+    try:
+        for item in os.listdir(current_folder):
+            item_path = os.path.join(clean_path, item) if clean_path else item
+            full_path = os.path.join(current_folder, item)
+            
+            is_directory = os.path.isdir(full_path)
+            stat = os.stat(full_path)
+            
+            items.append({
+                'name': item,
+                'path': item_path,
+                'is_directory': is_directory,
+                'modified': datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S'),
+                'timestamp': stat.st_mtime
+            })
+
+        # Sort items by timestamp (newest first) and type (folders first)
+        items.sort(key=lambda x: (-int(x['is_directory']), -x['timestamp']))
+
+    except Exception as e:
+        current_app.logger.error(f"Error reading directory: {str(e)}")
+        flash('Error reading directory!', 'danger')
+        return redirect(url_for('auth.teacher_dashboard'))
 
     return render_template('dashboard/manage_notes.html',
-                           batch_id=batch_id,
-                           admission_year=admission_year,
-                           semester=semester,
-                           course_id=course_id,
-                           subject_code=subject_code,
-                           existing_notes=existing_notes)
+                         batch_id=batch_id,
+                         admission_year=admission_year,
+                         semester=semester,
+                         course_id=course_id,
+                         subject_code=subject_code,
+                         current_path=clean_path,
+                         items=items)
 
 
 @bp.route('/teacher/upload_notes', methods=['POST'])
@@ -2438,48 +2435,55 @@ def upload_notes():
             return jsonify({'success': False, 'message': 'No files provided'}), 400
 
         # Validate required fields
-        required_fields = ['course_id', 'admission_year', 'semester', 'batch_id', 'subject_code']
+        required_fields = ['course_id', 'admission_year', 'semester', 'batch_id', 'subject_code', 'current_path']
         form_data = {}
 
         for field in required_fields:
             value = request.form.get(field)
-            if not value:
+            if not value and field != 'current_path':  # current_path can be empty for root directory
                 return jsonify({'success': False, 'message': f'Missing required field: {field}'}), 400
             form_data[field] = value
 
-        # Validate teacher's permission for this subject
-        teacher_id = current_user.teacher_profile.id
-        result = db.session.execute(text("""
-            SELECT cs.id 
-            FROM subject_assignments sa
-            JOIN course_subjects cs ON sa.course_subject_id = cs.id
-            WHERE sa.teacher_id = :teacher_id 
-              AND cs.batch_id = :batch_id 
-              AND cs.year = :admission_year
-              AND cs.semester = :semester
-              AND cs.course_id = :course_id
-              AND cs.subject_code = :subject_code
-        """), {
-            "teacher_id": teacher_id,
-            "batch_id": form_data['batch_id'],
-            "admission_year": form_data['admission_year'],
-            "semester": form_data['semester'],
-            "course_id": form_data['course_id'],
-            "subject_code": form_data['subject_code']
-        }).fetchone()
+        # Convert numeric values to integers
+        for field in ['course_id', 'admission_year', 'semester', 'batch_id']:
+            form_data[field] = int(form_data[field])
 
-        if not result:
-            return jsonify({'success': False, 'message': 'Unauthorized: Not assigned to this subject'}), 403
+        # # Validate teacher's access to this subject
+        # result = SubjectAssignment.query.filter_by(
+        #     teacher_id=current_user.teacher_profile.id,
+        #     course_id=form_data['course_id'],
+        #     admission_year=form_data['admission_year'],
+        #     semester=form_data['semester'],
+        #     batch_id=form_data['batch_id'],
+        #     subject_code=form_data['subject_code']
+        # ).first()
+        #
+        # if not result:
+        #     return jsonify({'success': False, 'message': 'Unauthorized: Not assigned to this subject'}), 403
 
-        # Create target directory
-        target_dir = os.path.join(
-            current_app.config['UPLOAD_FOLDER'],
+        # Construct the target directory path
+        BASE_UPLOAD_FOLDER = os.path.join(os.getcwd(), "uploads")
+        base_subject_path = os.path.join(
+            BASE_UPLOAD_FOLDER,
             str(form_data['course_id']),
             str(form_data['admission_year']),
             f"semester_{form_data['semester']}",
             f"batch_{form_data['batch_id']}",
             f"subject_{form_data['subject_code']}"
         )
+
+        # Add the current path to the target directory
+        current_path = form_data['current_path']
+        if current_path:
+            # Sanitize the path to prevent directory traversal
+            current_path = os.path.normpath(current_path)
+            if current_path.startswith('..') or current_path.startswith('/'):
+                return jsonify({'success': False, 'message': 'Invalid path'}), 400
+            target_dir = os.path.join(base_subject_path, current_path)
+        else:
+            target_dir = base_subject_path
+
+        # Create directory if it doesn't exist
         os.makedirs(target_dir, exist_ok=True)
 
         # Process files
@@ -2497,7 +2501,10 @@ def upload_notes():
                 # Save file
                 file_path = os.path.join(target_dir, filename)
                 file.save(file_path)
-                uploaded_files.append(filename)
+
+                # Store the relative path for the response
+                relative_path = os.path.join(current_path, filename) if current_path else filename
+                uploaded_files.append(relative_path)
 
         if not uploaded_files:
             return jsonify({'success': False, 'message': 'No valid files were uploaded'}), 400
@@ -2505,59 +2512,155 @@ def upload_notes():
         return jsonify({
             'success': True,
             'message': f'Successfully uploaded {len(uploaded_files)} files',
-            'files': uploaded_files
+            'files': uploaded_files,
+            'current_path': current_path
         })
 
     except Exception as e:
         logger.error(f"Upload error: {str(e)}", exc_info=True)
         return jsonify({
             'success': False,
-            'message': f'Server error during upload: {str(e)}'
+            'message': f'Server error: {str(e)}'
         }), 500
 
+
+@bp.route('/teacher/create_folder', methods=['POST'])
+@login_required
+def create_folder():
+    if current_user.role != 'teacher':
+        return jsonify({'success': False, 'message': 'Unauthorized access'}), 403
+
+    try:
+        data = request.get_json()
+        course_id = data.get('course_id')
+        admission_year = data.get('admission_year')
+        semester = data.get('semester')
+        batch_id = data.get('batch_id')
+        subject_code = data.get('subject_code')
+        folder_path = data.get('folder_path')
+
+        if not all([course_id, admission_year, semester, batch_id, subject_code, folder_path]):
+            return jsonify({'success': False, 'message': 'Missing required parameters'}), 400
+
+        # # Validate teacher's access to this subject
+        # result = SubjectAssignment.query.filter_by(
+        #     teacher_id=current_user.teacher_profile.id,
+        #     course_id=course_id,
+        #     admission_year=admission_year,
+        #     semester=semester,
+        #     batch_id=batch_id,
+        #     subject_code=subject_code
+        # ).first()
+        #
+        # if not result:
+        #     return jsonify({'success': False, 'message': 'Unauthorized: Not assigned to this subject'}), 403
+
+        # Create the folder path
+        base_path = os.path.join(
+            current_app.config['UPLOAD_FOLDER'],
+            str(course_id),
+            str(admission_year),
+            f"semester_{semester}",
+            f"batch_{batch_id}",
+            f"subject_{subject_code}"
+        )
+
+        # Clean and validate folder path
+        folder_path = os.path.normpath(folder_path)
+        if folder_path.startswith('..') or folder_path.startswith('/'):
+            return jsonify({'success': False, 'message': 'Invalid folder path'}), 400
+
+        full_path = os.path.join(base_path, folder_path)
+        os.makedirs(full_path, exist_ok=True)
+
+        return jsonify({
+            'success': True,
+            'message': 'Folder created successfully',
+            'path': folder_path
+        })
+
     except Exception as e:
-        logger.error(f"Upload error: {str(e)}")
-        return jsonify({'success': False, 'message': str(e)}), 500
+        logger.error(f"Folder creation error: {str(e)}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'message': f'Server error: {str(e)}'
+        }), 500
 
-
-
-@bp.route('/teacher/download_file/<int:course_id>/<int:admission_year>/<int:semester>/<int:batch_id>/<subject_code>/<filename>')
+@bp.route('/teacher/download_file/<int:course_id>/<int:admission_year>/<int:semester>/<int:batch_id>/<subject_code>/<path:filename>')
 @login_required
 def download_file(course_id, admission_year, semester, batch_id, subject_code, filename):
+    if current_user.role != 'teacher':
+        flash('Access denied!', 'danger')
+        return redirect(url_for('auth.teacher_dashboard'))
+
     teacher_id = current_user.teacher_profile.id
 
-    # ✅ Security check
-    result = db.session.execute(text("""
-        SELECT cs.id 
-        FROM subject_assignments sa
-        JOIN course_subjects cs ON sa.course_subject_id = cs.id
-        WHERE sa.teacher_id = :teacher_id 
-          AND cs.batch_id = :batch_id 
-          AND cs.year = :admission_year
-          AND cs.semester = :semester
-          AND cs.course_id = :course_id
-          AND cs.subject_code = :subject_code
-    """), {
-        "teacher_id": teacher_id,
-        "batch_id": batch_id,
-        "admission_year": admission_year,
-        "semester": semester,
-        "course_id": course_id,
-        "subject_code": subject_code
-    }).fetchone()
+    # # ✅ Security check
+    # result = db.session.execute(text("""
+    #     SELECT cs.id
+    #     FROM subject_assignments sa
+    #     JOIN course_subjects cs ON sa.course_subject_id = cs.id
+    #     WHERE sa.teacher_id = :teacher_id
+    #       AND cs.batch_id = :batch_id
+    #       AND cs.year = :admission_year
+    #       AND cs.semester = :semester
+    #       AND cs.course_id = :course_id
+    #       AND cs.subject_code = :subject_code
+    # """), {
+    #     "teacher_id": teacher_id,
+    #     "batch_id": batch_id,
+    #     "admission_year": admission_year,
+    #     "semester": semester,
+    #     "course_id": course_id,
+    #     "subject_code": subject_code
+    # }).fetchone()
+    #
+    # if not result:
+    #     flash('Unauthorized access!', 'danger')
+    #     return redirect(url_for('auth.teacher_dashboard'))
 
-    if not result:
-        flash('Unauthorized access!', 'danger')
-        return redirect(url_for('teacher.teacher_dashboard'))
+    # Clean and validate the filename path
+    clean_filename = os.path.normpath(filename)
+    if clean_filename.startswith('..') or clean_filename.startswith('/'):
+        flash('Invalid file path!', 'danger')
+        return redirect(url_for('auth.manage_notes', 
+                              batch_id=batch_id,
+                              admission_year=admission_year,
+                              semester=semester,
+                              course_id=course_id,
+                              subject_code=subject_code))
 
     # ✅ Build internal redirect path for NGINX
-    internal_path = f"/_secured_uploads/{course_id}/{admission_year}/semester_{semester}/batch_{batch_id}/subject_{subject_code}/{filename}"
+    internal_path = f"/_secured_uploads/{course_id}/{admission_year}/semester_{semester}/batch_{batch_id}/subject_{subject_code}/{clean_filename}"
+
+    # Verify file exists
+    base_path = os.path.join(
+        current_app.config['UPLOAD_FOLDER'],
+        str(course_id),
+        str(admission_year),
+        f"semester_{semester}",
+        f"batch_{batch_id}",
+        f"subject_{subject_code}",
+        clean_filename
+    )
+
+    if not os.path.exists(base_path):
+        flash('File not found!', 'danger')
+        return redirect(url_for('auth.manage_notes', 
+                              batch_id=batch_id,
+                              admission_year=admission_year,
+                              semester=semester,
+                              course_id=course_id,
+                              subject_code=subject_code))
+
+    # Get just the filename without the path for Content-Disposition
+    display_filename = os.path.basename(clean_filename)
 
     # ✅ Return internal redirect
     return Response(
         headers={
             "X-Accel-Redirect": internal_path,
-            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Disposition": f'attachment; filename="{display_filename}"',
         },
         status=200
     )
@@ -2567,59 +2670,50 @@ def download_file(course_id, admission_year, semester, batch_id, subject_code, f
 @bp.route('/teacher/delete_note', methods=['POST'])
 @login_required
 def delete_note():
-    teacher_id = current_user.teacher_profile.id
+    if current_user.role != 'teacher':
+        return jsonify({'success': False, 'message': 'Unauthorized access'}), 403
 
-    # Fetching values from the form
-    file_name = request.form.get("file_name")
-    course_id = request.form.get("course_id")
-    admission_year = request.form.get("admission_year")
-    semester = request.form.get("semester")
-    batch_id = request.form.get("batch_id")
-    subject_code = request.form.get("subject_code")
+    try:
+        data = request.get_json()
+        course_id = data.get('course_id')
+        admission_year = data.get('admission_year')
+        semester = data.get('semester')
+        batch_id = data.get('batch_id')
+        subject_code = data.get('subject_code')
+        item_path = data.get('path')
+        is_directory = data.get('is_directory', False)
 
-    # Convert numeric values to integers (important to prevent type issues)
-    course_id = int(course_id)
-    admission_year = int(admission_year)
-    semester = int(semester)
-    batch_id = int(batch_id)
+        if not all([course_id, admission_year, semester, batch_id, subject_code, item_path]):
+            return jsonify({'success': False, 'message': 'Missing required parameters'}), 400
 
-    # Security Check: Verify if the teacher is assigned to this subject
-    result = db.session.execute(text("""
-        SELECT cs.id 
-        FROM subject_assignments sa
-        JOIN course_subjects cs ON sa.course_subject_id = cs.id
-        WHERE sa.teacher_id = :teacher_id 
-          AND cs.batch_id = :batch_id 
-          AND cs.year = :admission_year
-          AND cs.semester = :semester
-          AND cs.course_id = :course_id
-          AND cs.subject_code = :subject_code
-    """), {
-        "teacher_id": teacher_id,
-        "batch_id": batch_id,
-        "admission_year": admission_year,
-        "semester": semester,
-        "course_id": course_id,
-        "subject_code": subject_code
-    }).fetchone()
+        # Construct the full path
+        BASE_UPLOAD_FOLDER = os.path.join(os.getcwd(), "uploads")
+        full_path = os.path.join(
+            BASE_UPLOAD_FOLDER,
+            str(course_id),
+            str(admission_year),
+            f"semester_{semester}",
+            f"batch_{batch_id}",
+            f"subject_{subject_code}",
+            item_path
+        )
 
-    if not result:
-        flash('Unauthorized access!', 'danger')
-        return redirect(url_for('teacher.teacher_dashboard'))
+        # Validate path is within allowed directory
+        if not os.path.commonprefix([os.path.abspath(full_path), BASE_UPLOAD_FOLDER]).startswith(BASE_UPLOAD_FOLDER):
+            return jsonify({'success': False, 'message': 'Invalid path'}), 400
 
-    # File deletion process
-    BASE_UPLOAD_FOLDER = os.path.join(os.getcwd(), "uploads")
+        if os.path.exists(full_path):
+            if is_directory:
+                shutil.rmtree(full_path)
+            else:
+                os.remove(full_path)
+            return jsonify({'success': True, 'message': 'Item deleted successfully'})
+        else:
+            return jsonify({'success': False, 'message': 'Item not found'}), 404
 
-    subject_folder = os.path.join(BASE_UPLOAD_FOLDER, f"{course_id}/{admission_year}/semester_{semester}/batch_{batch_id}/subject_{subject_code}")
-    file_path = os.path.join(subject_folder, file_name)
-
-    if os.path.exists(file_path):
-        os.remove(file_path)
-        flash('File deleted successfully!', 'success')
-    else:
-        flash('File not found!', 'danger')
-
-    return redirect(request.referrer)
+    except Exception as e:
+        logger.error(f"Delete error: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'message': f'Server error: {str(e)}'}), 500
 
 
 
@@ -2693,32 +2787,34 @@ def get_semesters_inlogin():
 
 
 @bp.route('/api/batches', methods=['GET'])
-def get_batches_inlogin():
+def get_batchess():
     course_id = request.args.get('course_id')
     admission_year = request.args.get('admission_year')
     semester = request.args.get('semester')
 
-    if not course_id or not admission_year or not semester:
+    if not all([course_id, admission_year, semester]):
         return jsonify([])
 
-    # Get all batches for the selected course, admission year, and semester
-    batches = db.session.query(
-        BatchTable.id,
-        BatchTable.batch_id
-    ).filter(
-        BatchTable.course_id == course_id,
-        BatchTable.admission_year == admission_year,
-        BatchTable.semester == semester
-    ).distinct().all()
+    try:
+        batches = db.session.query(
+            BatchTable.id,
+            BatchTable.batch_id
+        ).filter(
+            BatchTable.course_id == course_id,
+            BatchTable.admission_year == admission_year,
+            BatchTable.semester == semester
+        ).distinct().all()
 
-    result = []
-    for batch in batches:
-        result.append({
+        result = [{
             'id': batch.id,
             'batch_id': batch.batch_id
-        })
+        } for batch in batches]
 
-    return jsonify(result)
+        return jsonify(result)
+
+    except Exception as e:
+        current_app.logger.error(f"Error fetching batches: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
 
 
 
@@ -3326,7 +3422,6 @@ def delete_librarian(librarian_id):
         UserCredentials.query.filter_by(id=librarian.credential_id).delete()
 
         db.session.commit()
-        flash('Librarian and associated data deleted successfully!', 'success')
         return redirect(url_for('auth.manage_librarians'))
     except Exception as e:
         db.session.rollback()
@@ -3339,7 +3434,6 @@ def delete_librarian(librarian_id):
 @login_required
 def librarian_photo(filename):
     print(filename)
-    UPLOAD_FOLDER = "uploads"  # Base upload folder
     folder = "librarian_photos"
 
     # Only allow admin and librarians to view photos
@@ -3349,11 +3443,15 @@ def librarian_photo(filename):
     file_path = os.path.join(UPLOAD_FOLDER, filename)
     print(file_path)
 
-    # Check if file exists
     if not os.path.exists(file_path):
         abort(404)  # File Not Found
 
     return send_file(file_path)
+
+
+
+
+
 
 
 
