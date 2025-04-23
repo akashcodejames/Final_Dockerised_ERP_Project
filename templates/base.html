@@ -121,17 +121,23 @@
 
     <!-- Flash Messages -->
     <div class="container mt-3">
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-warning alert-dismissible fade show flash-message" role="alert">
-                        <i class="fas fa-exclamation-circle"></i> {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-    </div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for msg in messages %}
+                {% if msg[1] is defined %}
+                    {% set category, message = msg %}
+                {% else %}
+                    {% set category = 'info' %}
+                    {% set message = msg %}
+                {% endif %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show flash-message" role="alert">
+                    <i class="fas fa-exclamation-circle"></i> {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</div>
 
     <!-- Content Section -->
     <div class="container">

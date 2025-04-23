@@ -32,7 +32,8 @@ from email.mime.text import MIMEText
 import random
 import string
 from flask_mail import Message
-
+from services.email_service import EmailService
+from services.tasks import process_urgent_emails
 
 mail="akash"
 bp = Blueprint('auth', __name__)
@@ -95,6 +96,7 @@ def forgot_password_page():
     email = request.args.get('email', '')
     return render_template('forgot_password.html', show_otp_form=show_otp_form, email=email)
 
+
 @bp.route('/send_otp', methods=['POST'])
 def send_otp():
     try:
@@ -102,20 +104,20 @@ def send_otp():
         if not email:
             flash('Email is required')
             return redirect(url_for('auth.forgot_password_page'))
-        
+
         # Check if user exists
         user = UserCredentials.query.filter_by(email=email).first()
         if not user:
             flash('No account found with this email')
             return redirect(url_for('auth.forgot_password_page'))
-        
+
         # Generate and save OTP
         otp = generate_otp()
-        
+
         # Delete any existing OTPs for this email
         OTPModel.query.filter_by(email=email).delete()
         db.session.commit()
-        
+
         # Create new OTP record
         otp_record = OTPModel(
             email=email,
@@ -124,28 +126,29 @@ def send_otp():
         )
         db.session.add(otp_record)
         db.session.commit()
-        
-        # Prepare HTML email
-        html_body = render_template(
-            'otp_email.html',  # Assuming you have a username field
-            otp=otp
+
+        # Queue urgent email using EmailService
+        email_id = EmailService.send_email(
+            to_email=email,
+            subject='Password Reset OTP',
+            template_name='otp_email.html',
+            context={'otp': otp},
+            priority=EmailService.PRIORITY_URGENT  # Set as urgent priority
         )
-        
-        # Send OTP via email with HTML content
-        msg = Message(
-            'Password Reset OTP',
-            recipients=[email],
-            html=html_body,
-        )
-        mail.send(msg)
-        
-        flash('OTP has been sent to your email')
-        return redirect(url_for('auth.forgot_password_page', show_otp_form=True, email=email))
-    
+
+        if email_id:
+            # Trigger urgent email processing
+            process_urgent_emails.delay()
+            flash('OTP has been sent to your email')
+            return redirect(url_for('auth.forgot_password_page', show_otp_form=True, email=email))
+        else:
+            raise Exception("Failed to queue email")
+
     except Exception as e:
         logger.error(f"Error in send_otp: {str(e)}")
         flash('An error occurred while sending OTP')
         return redirect(url_for('auth.forgot_password_page'))
+
 
 @bp.route('/verify_otp_and_reset', methods=['POST'])
 def verify_otp_and_reset():
@@ -159,33 +162,38 @@ def verify_otp_and_reset():
 
         # Find and verify OTP
         otp_record = OTPModel.query.filter_by(email=email, otp_code=otp, is_used=False).first()
-        
+
         if not otp_record or not otp_record.is_valid():
             flash('Invalid or expired OTP')
             return redirect(url_for('auth.forgot_password_page', show_otp_form=True, email=email))
 
         # Generate new password
         new_password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
-        
+
         # Update password in database
         user = UserCredentials.query.filter_by(email=email).first()
         user.set_password(new_password)
-        
+
         # Mark OTP as used
         otp_record.is_used = True
         db.session.commit()
 
-        html_content = render_template('email_template.html', password=new_password)
-        # Send new password via email
-        msg = Message(
-            'New Password',
-            recipients=[email],
+        # Queue urgent email using EmailService
+        email_id = EmailService.send_email(
+            to_email=email,
+            subject='New Password',
+            template_name='email_template.html',
+            context={'password': new_password},
+            priority=EmailService.PRIORITY_URGENT  # Set as urgent priority
         )
-        msg.html = html_content
-        mail.send(msg)
 
-        flash('Your password has been reset. Please check your email for the new password.')
-        return redirect(url_for('auth.login'))
+        if email_id:
+            # Trigger urgent email processing
+            process_urgent_emails.delay()
+            flash('Your password has been reset. Please check your email for the new password.')
+            return redirect(url_for('auth.login'))
+        else:
+            raise Exception("Failed to queue email")
 
     except Exception as e:
         logger.error(f"Error in verify_otp_and_reset: {str(e)}")
