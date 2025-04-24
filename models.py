@@ -467,6 +467,36 @@ class LibrarianProfile(db.Model):
         return f'<Librarian {self.first_name} {self.last_name}>'
 
 
+class TimetableAssignment(db.Model):
+    __tablename__ = 'timetable_assignments'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    course_id = db.Column(db.String(20), nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    semester = db.Column(db.Integer, nullable=False)
+    batch_id = db.Column(db.String(20), nullable=False)
+    day = db.Column(db.String(20), nullable=False)
+    period = db.Column(db.Integer, nullable=False)
+    subject_id = db.Column(db.Integer, db.ForeignKey('course_subjects.id'), nullable=False)
+    teacher_id = db.Column(db.Integer, db.ForeignKey('teacher_details.id'), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    # Relationships
+    subject = db.relationship('CourseSubject', backref=db.backref('timetable_entries', lazy=True))
+    teacher = db.relationship('TeacherDetails', backref=db.backref('timetable_entries', lazy=True))
+
+    # Indexes
+    __table_args__ = (
+        db.Index('idx_batch', 'course_id', 'year', 'semester', 'batch_id'),
+        db.Index('idx_day_period', 'day', 'period'),
+    )
+
+    def __repr__(self):
+        return (f"<TimetableAssignment(id={self.id}, course_id={self.course_id}, year={self.year}, "
+                f"semester={self.semester}, batch_id={self.batch_id}, day={self.day}, "
+                f"period={self.period}, subject_id={self.subject_id}, teacher_id={self.teacher_id})>")
+
+
 @login_manager.user_loader
 def load_user(user_id):
     # user_id is expected to be a string from the session cookie

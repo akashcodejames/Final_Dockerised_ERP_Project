@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>My Timetable</h2>
+    <div class="card">
+        <div class="card-header">
+            <h5>Course: {{ student.course_id }} | Year: {{ student.current_year }} | Semester: {{ student.current_semester }} | Batch: {{ student.batch_id }}</h5>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        {% for day in days %}
+                        <th>{{ day }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for period in range(periods_per_day) %}
+                    <tr>
+                        <td>{{ period_times[period] }}</td>
+                        {% for day in days %}
+                        <td>{{ timetable[day][period] | replace('\n', '<br>') | safe }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

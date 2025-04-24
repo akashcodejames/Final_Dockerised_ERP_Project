@@ -58,6 +58,56 @@
         </div>
     </div>
 
+    <!-- Quick Links Section -->
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-header bg-white p-3 border-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="fw-bold mb-0">
+                            <i class="bi bi-link-45deg me-2 text-primary"></i>
+                            Quick Links
+                        </h3>
+                    </div>
+                </div>
+                <div class="card-body p-3">
+                    <div class="row g-3">
+                        <div class="col-md-4 col-sm-6">
+                            <a href="{{ url_for('auth.student_timetable') }}" class="text-decoration-none">
+                                <div class="card h-100 border-0 bg-light rounded-3 hover-shadow transition">
+                                    <div class="card-body text-center py-4">
+                                        <i class="bi bi-calendar3-week text-primary fa-2x mb-3"></i>
+                                        <h6 class="mb-0">View Timetable</h6>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-4 col-sm-6">
+                            <a href="{{ url_for('auth.student_dashboard') }}" class="text-decoration-none">
+                                <div class="card h-100 border-0 bg-light rounded-3 hover-shadow transition">
+                                    <div class="card-body text-center py-4">
+                                        <i class="bi bi-calendar2-check text-success fa-2x mb-3"></i>
+                                        <h6 class="mb-0">Attendance</h6>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-4 col-sm-6">
+                            <a href="{{ url_for('auth.view_notes', subject_code=subject_code) }}" class="text-decoration-none">
+                                <div class="card h-100 border-0 bg-light rounded-3 hover-shadow transition">
+                                    <div class="card-body text-center py-4">
+                                        <i class="bi bi-journal-text text-info fa-2x mb-3"></i>
+                                        <h6 class="mb-0">Notes</h6>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Subjects & Attendance Section -->
     <div class="row mb-4">
         <div class="col-lg-12">
@@ -162,31 +212,45 @@
 </div>
 
 <style>
-/* Custom styles for modernized dashboard */
-.bg-gradient-primary {
-    background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+/* Button base variables */
+:root {
+    --bs-btn-padding-y: 0.5rem;
+    --bs-btn-padding-x: 0.5rem;
+    --bs-btn-font-size: 0.875rem;
+    --bs-btn-border-radius: var(--bs-border-radius-sm);
 }
 
-.rounded-4 {
-    border-radius: 0.75rem !important;
+/* Existing styles */
+.fa-2x {
+    font-size: 2rem;
 }
 
-.avatar-circle {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 0.8rem;
+/* Enhanced button styling */
+.btn {
+    padding: var(--bs-btn-padding-y) var(--bs-btn-padding-x);
+    font-size: var(--bs-btn-font-size);
+    border-radius: var(--bs-btn-border-radius);
+    transition: all 0.2s ease-in-out;
 }
 
+/* Hover effects for quick link cards */
+.hover-shadow {
+    transition: all 0.3s ease;
+}
+
+.hover-shadow:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.transition {
+    transition: all 0.3s ease;
+}
+
+/* Circular chart styling */
 .circular-chart {
-    display: block;
-    margin: 0 auto;
-    max-width: 100%;
-    max-height: 100%;
+    width: 100%;
+    height: 100%;
 }
 
 .circle-bg {
@@ -197,7 +261,7 @@
 
 .circle {
     fill: none;
-    stroke-width: 3.2;
+    stroke-width: 2.8;
     stroke-linecap: round;
     animation: progress 1s ease-out forwards;
 }
@@ -205,8 +269,20 @@
 .percentage {
     fill: #666;
     font-family: sans-serif;
-    font-size: 0.3em;
+    font-size: 0.5em;
     text-anchor: middle;
+}
+
+/* Avatar circle styling */
+.avatar-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 500;
 }
 
 @keyframes progress {

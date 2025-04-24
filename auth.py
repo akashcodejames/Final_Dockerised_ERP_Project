@@ -1850,24 +1850,17 @@ def download_note_student(subject_code, filename):
         flash("Session data is missing or corrupted!", "danger")
         return redirect(url_for('auth.student_dashboard'))
 
-    # Construct the file path
-    BASE_UPLOAD_FOLDER = os.path.join(os.getcwd(), "uploads")
-    file_path = os.path.join(
-        BASE_UPLOAD_FOLDER,
-        f"{session['course_id']}/{session['admission_year']}/semester_{session['semester']}/batch_{session['batch_id']}/subject_{subject_code}",
-        filename
+    # Construct the internal path for Nginx
+    internal_path = f"/_secured_uploads/{session['course_id']}/{session['admission_year']}/semester_{session['semester']}/batch_{session['batch_id']}/subject_{subject_code}/{filename}"
+
+    # Return internal redirect response
+    return Response(
+        headers={
+            "X-Accel-Redirect": internal_path,
+            "Content-Disposition": f'attachment; filename="{os.path.basename(filename)}"',
+        },
+        status=200
     )
-
-    # Validate path is within allowed directory
-    if not os.path.commonprefix([os.path.abspath(file_path), BASE_UPLOAD_FOLDER]).startswith(BASE_UPLOAD_FOLDER):
-        flash("Invalid file path!", "danger")
-        return redirect(url_for('auth.view_notes', subject_code=subject_code))
-
-    if not os.path.exists(file_path):
-        flash("File not found!", "danger")
-        return redirect(url_for('auth.view_notes', subject_code=subject_code))
-
-    return send_file(file_path, as_attachment=True)
 
 
 
@@ -2365,7 +2358,7 @@ def manage_notes(batch_id, admission_year, semester, course_id, subject_code):
         return redirect(url_for('auth.teacher_dashboard'))
 
     current_path = request.args.get('path', '')
-    
+
     # Clean and validate the path
     clean_path = os.path.normpath(current_path)
     if clean_path.startswith('..') or clean_path.startswith('/'):
@@ -2377,7 +2370,7 @@ def manage_notes(batch_id, admission_year, semester, course_id, subject_code):
         BASE_UPLOAD_FOLDER,
         f"{course_id}/{admission_year}/semester_{semester}/batch_{batch_id}/subject_{subject_code}"
     )
-    
+
     current_folder = os.path.join(subject_folder, clean_path)
 
     # Validate the current folder is within the subject folder
@@ -2393,10 +2386,10 @@ def manage_notes(batch_id, admission_year, semester, course_id, subject_code):
         for item in os.listdir(current_folder):
             item_path = os.path.join(clean_path, item) if clean_path else item
             full_path = os.path.join(current_folder, item)
-            
+
             is_directory = os.path.isdir(full_path)
             stat = os.stat(full_path)
-            
+
             items.append({
                 'name': item,
                 'path': item_path,
@@ -2623,7 +2616,7 @@ def download_file(course_id, admission_year, semester, batch_id, subject_code, f
     clean_filename = os.path.normpath(filename)
     if clean_filename.startswith('..') or clean_filename.startswith('/'):
         flash('Invalid file path!', 'danger')
-        return redirect(url_for('auth.manage_notes', 
+        return redirect(url_for('auth.manage_notes',
                               batch_id=batch_id,
                               admission_year=admission_year,
                               semester=semester,
@@ -2646,7 +2639,7 @@ def download_file(course_id, admission_year, semester, batch_id, subject_code, f
 
     if not os.path.exists(base_path):
         flash('File not found!', 'danger')
-        return redirect(url_for('auth.manage_notes', 
+        return redirect(url_for('auth.manage_notes',
                               batch_id=batch_id,
                               admission_year=admission_year,
                               semester=semester,
@@ -3450,7 +3443,98 @@ def librarian_photo(filename):
 
 
 
+@bp.route('/student_timetable')
+@login_required
+def student_timetable():
+    """Allow students to view their timetable"""
+    try:
+        # Get student details from session
+        if 'student_id' not in session:
+            flash('Session expired. Please login again.')
+            return redirect(url_for('auth.logout'))
 
+        # Get student's batch details from session
+        course_id = session.get('course_id')
+        year = session.get('admission_year')
+        semester = session.get('semester')
+        batch_id = session.get('batch_id')
+
+        if not all([course_id, year, semester, batch_id]):
+            missing = []
+            if not course_id: missing.append('course_id')
+            if not year: missing.append('year')
+            if not semester: missing.append('semester')
+            if not batch_id: missing.append('batch_id')
+            flash(f'Missing required details: {", ".join(missing)}')
+            return redirect(url_for('auth.student_dashboard'))
+
+        # Get student's batch timetable using SQLAlchemy
+        query = text("""
+            SELECT 
+                ta.day, ta.period,
+                cs.subject_name, cs.subject_code,
+                CONCAT(td.first_name, ' ', td.last_name) as teacher_name
+            FROM timetable_assignments ta
+            JOIN course_subjects cs ON ta.subject_id = cs.id
+            JOIN teacher_details td ON ta.teacher_id = td.id
+            WHERE ta.course_id = :course_id 
+            AND ta.year = :year 
+            AND ta.semester = :semester 
+            AND ta.batch_id = :batch_id
+            ORDER BY FIELD(ta.day, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'), ta.period
+        """)
+
+        # Execute query using SQLAlchemy
+        assignments = db.session.execute(query, {
+            'course_id': course_id,
+            'year': year,
+            'semester': semester,
+            'batch_id': batch_id
+        }).fetchall()
+
+        # Initialize timetable structure
+        days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+        periods_per_day = 7  # Adjust as needed
+        PERIOD_TIMES = [
+            "9:00 - 9:55",
+            "9:55 - 10:50",
+            "11:05 - 12:00",
+            "12:00 - 12:55",
+            "1:45 - 2:40",
+            "2:40 - 3:35",
+            "3:35 - 4:30"
+        ]
+        timetable = {day: [""] * periods_per_day for day in days}
+
+        # Fill timetable
+        for row in assignments:
+            day = row.day
+            period = row.period
+            subject = row.subject_name
+            teacher = row.teacher_name
+            subject_code = row.subject_code
+
+            timetable[day][period] = f"{subject} ({subject_code})\n{teacher}"
+
+        return render_template('timetable/student_timetable.html',
+                             timetable=timetable,
+                             days=days,
+                             periods_per_day=periods_per_day,
+                             period_times=PERIOD_TIMES,
+                             student={
+                                 'course_id': course_id,
+                                 'current_year': year,
+                                 'current_semester': semester,
+                                 'batch_id': batch_id
+                             })
+
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Error viewing student timetable: {str(e)}")
+        print(f"Detailed error: {error_details}")
+        flash(f'Error loading timetable: {str(e)}')
+        return redirect(url_for('auth.student_dashboard'))
 
 
 

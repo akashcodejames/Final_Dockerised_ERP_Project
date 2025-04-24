@@ -65,12 +65,22 @@ def parse_batch_string(batch_string):
 
 # Database connection function
 def get_db_connection():
+    """
+    Creates and returns a MySQL database connection using environment variables
+    """
+    from os import environ
+    from dotenv import load_dotenv
+    
+    load_dotenv()
+    
     return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="toor",
-        database="xyz"
+        host=environ.get('MYSQL_HOST', 'db'),  # 'db' is the service name in docker-compose
+        user=environ.get('MYSQL_USER'),
+        password=environ.get('MYSQL_PASSWORD'),
+        database=environ.get('MYSQL_DATABASE'),
+        port=int(environ.get('MYSQL_PORT', 3306))
     )
+
 
 
 # Fetch subjects and teachers from the database
@@ -1900,3 +1910,5 @@ def save_all_timetables():
             cursor.close()
         if db:
             db.close()
+
+
